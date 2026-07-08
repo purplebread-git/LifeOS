@@ -25,4 +25,5 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
+    """Фабрика настроек с кэшированием — единственный instance на процесс."""
     return Settings()
