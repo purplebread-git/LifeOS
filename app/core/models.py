@@ -2,6 +2,7 @@
 
 Это не бизнес-логика — это форма данных, которой обмениваются интерфейсы.
 """
+
 from __future__ import annotations
 
 from enum import StrEnum

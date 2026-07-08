@@ -1,4 +1,5 @@
 """Модели описания и результата выполнения инструментов."""
+
 from __future__ import annotations
 
 from typing import Any

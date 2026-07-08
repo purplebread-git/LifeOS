@@ -1,4 +1,5 @@
 """Модели сообщений и мультимодального контента."""
+
 from __future__ import annotations
 
 from enum import StrEnum

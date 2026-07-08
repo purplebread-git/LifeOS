@@ -5,6 +5,7 @@
 Более сложная логика (обрезка по токенам, инъекция памяти) появится
 позже без изменения сигнатуры build().
 """
+
 from __future__ import annotations
 
 from app.core.context_builder import ContextBuilder

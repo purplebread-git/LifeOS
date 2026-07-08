@@ -1,4 +1,5 @@
 """SimplePluginRegistry — конкретная реализация PluginRegistry."""
+
 from __future__ import annotations
 
 from app.core.plugin_registry import PluginRegistry

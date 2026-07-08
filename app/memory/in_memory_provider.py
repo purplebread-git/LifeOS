@@ -1,5 +1,6 @@
 """InMemoryMemoryProvider — реализация MemoryProvider в оперативной памяти
 процесса. Годится для разработки и тестов; не переживает перезапуск."""
+
 from __future__ import annotations
 
 from app.core.memory_provider import MemoryProvider

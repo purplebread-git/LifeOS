@@ -5,6 +5,7 @@
 ответ. Именно Agent, а не ConversationEngine и не ToolManager, отвечает за
 загрузку и сохранение истории.
 """
+
 from __future__ import annotations
 
 from app.core.agent import Agent

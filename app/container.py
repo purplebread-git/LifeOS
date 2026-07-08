@@ -3,6 +3,7 @@
 app/core/ НИКОГДА не импортирует dependency-injector — библиотека
 используется исключительно здесь, на границе wiring'а.
 """
+
 from __future__ import annotations
 
 from collections.abc import AsyncIterator

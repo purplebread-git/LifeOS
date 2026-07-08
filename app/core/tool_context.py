@@ -5,6 +5,7 @@
 которые куда-то едут (в LLM, в БД, в API-ответ); dataclass — для
 контейнеров с зависимостями внутри одного процесса.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

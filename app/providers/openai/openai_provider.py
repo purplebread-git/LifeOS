@@ -3,6 +3,7 @@
 Вся логика конвертации вынесена в mapper.py — этот класс только
 оркестрирует: маппинг запроса → вызов клиента → маппинг ответа.
 """
+
 from __future__ import annotations
 
 from app.core.llm_provider import LLMProvider
@@ -23,9 +24,7 @@ class OpenAIProvider(LLMProvider):
         tools: list[ToolDefinition] | None = None,
     ) -> LLMResponse:
         openai_messages = [mapper.message_to_openai(message) for message in messages]
-        openai_tools = (
-            [mapper.tool_definition_to_openai(tool) for tool in tools] if tools else None
-        )
+        openai_tools = [mapper.tool_definition_to_openai(tool) for tool in tools] if tools else None
 
         completion = await self._client.chat(
             model=self._model,

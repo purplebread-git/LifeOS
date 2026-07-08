@@ -37,9 +37,7 @@ async def test_message_with_text_block_converts_correctly() -> None:
     )
     provider = OpenAIProvider(client=client, model="gpt-4o-mini")
 
-    await provider.generate(
-        messages=[Message(role=Role.USER, content=[TextBlock(text="Привет")])]
-    )
+    await provider.generate(messages=[Message(role=Role.USER, content=[TextBlock(text="Привет")])])
 
     sent_messages = client.chat.call_args.kwargs["messages"]
     assert sent_messages == [{"role": "user", "content": "Привет"}]

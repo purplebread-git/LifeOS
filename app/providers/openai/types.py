@@ -3,6 +3,7 @@
 TypedDict вместо dict[str, Any] — чтобы IDE и mypy понимали форму данных,
 которую ожидает и возвращает OpenAIClient.
 """
+
 from __future__ import annotations
 
 from typing import Any, Literal, NotRequired, TypedDict

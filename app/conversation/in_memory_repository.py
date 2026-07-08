@@ -7,6 +7,7 @@
 
 Не переживает перезапуск процесса; годится для разработки и тестов.
 """
+
 from __future__ import annotations
 
 from app.core.conversation_repository import ConversationRepository
