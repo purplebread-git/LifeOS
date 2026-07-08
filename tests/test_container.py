@@ -1,61 +1,50 @@
+"""Тесты Container проверяют ТОЛЬКО структуру графа зависимостей.
+
+agent.respond() здесь не вызывается: Container теперь резолвит настоящий
+OpenAIProvider, а вызов respond() означал бы реальный сетевой запрос к
+OpenAI API. Поведение Agent/ConversationEngine проверяется отдельно в
+test_agent.py с фейковым LLMProvider.
+"""
 import pytest_asyncio
 
 from app.container import Container
 from app.core.agent import Agent
+from app.core.conversation_engine import ConversationEngine
+from app.core.conversation_repository import ConversationRepository
+from app.core.llm_provider import LLMProvider
 from app.core.plugin_registry import PluginRegistry
-from app.models import AgentResponse
+from app.providers.openai import OpenAIProvider
 
 
 @pytest_asyncio.fixture
 async def container() -> Container:
     c = Container()
-
     await c.init_resources()
-
     yield c
-
     await c.shutdown_resources()
 
 
-async def test_container_resolves_agent(
-    container: Container,
-) -> None:
-    agent = container.agent()
-
-    assert isinstance(agent, Agent)
+async def test_container_resolves_agent(container: Container) -> None:
+    assert isinstance(container.agent(), Agent)
 
 
-async def test_agent_respond_end_to_end(
-    container: Container,
-) -> None:
-    agent = container.agent()
-
-    response = await agent.respond(
-        conversation_id="conv-1",
-        user_input="Привет",
-    )
-
-    assert isinstance(response, AgentResponse)
-    assert response.conversation_id == "conv-1"
-    assert len(response.messages) == 1
+async def test_container_resolves_conversation_engine(container: Container) -> None:
+    assert isinstance(container.conversation_engine(), ConversationEngine)
 
 
-async def test_plugin_lifecycle_resolves_even_without_plugins(
-    container: Container,
-) -> None:
+async def test_container_resolves_conversation_repository(container: Container) -> None:
+    assert isinstance(container.conversation_repository(), ConversationRepository)
+
+
+async def test_container_resolves_llm_provider_as_openai(container: Container) -> None:
+    assert isinstance(container.llm_provider(), OpenAIProvider)
+    assert isinstance(container.llm_provider(), LLMProvider)
+
+
+async def test_plugin_lifecycle_resolves_even_without_plugins(container: Container) -> None:
     manager = container.plugin_manager()
     registry = container.plugin_registry()
 
     assert manager is not None
     assert isinstance(registry, PluginRegistry)
     assert registry.all_registered_tools() == []
-
-
-async def test_null_llm_returns_content_blocks(
-    container: Container,
-) -> None:
-    llm = container.llm_provider()
-
-    response = await llm.generate([])
-
-    assert response.message.content[0].type == "text"

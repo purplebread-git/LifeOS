@@ -24,11 +24,4 @@ providers/ plugins/ memory/  ← знают про core и models, не знаю
 api/ container.py  ← знают про всё, собирают граф зависимостей
 
 ## Статус
-- [x] Итерация 1: Фундамент
-- [x] Итерация 2: Интерфейсы ядра
-- [x] Итерация 3: DI Container (dependency-injector)
-- [ ] Итерация 4: OpenAIProvider
-- [ ] Итерация 5: ToolManager
-- [ ] Итерация 6: Agent (реальная реализация, удаление stubs.py)
-- [ ] Итерация 7: MemoryProvider (production-реализация)
-- [ ] Итерация 8: Plugins
+См. [docs/roadmap.md](roadmap.md)
