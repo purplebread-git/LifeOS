@@ -6,15 +6,12 @@ from app.models.conversation import (
     AgentResponse,
     Conversation,
 )
-
 from app.models.event import (
     Event,
     MessageReceivedEvent,
     ToolExecutedEvent,
 )
-
 from app.models.memory import MemoryEntry
-
 from app.models.message import (
     AudioBlock,
     ContentBlock,
@@ -26,12 +23,10 @@ from app.models.message import (
     TextBlock,
     ToolCall,
 )
-
 from app.models.tool import (
     ToolDefinition,
     ToolResult,
 )
-
 
 __all__ = [
     "AgentResponse",

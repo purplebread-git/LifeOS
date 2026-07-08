@@ -1,20 +1,18 @@
 """Событие в системе: факт + типизированный payload через Generic[T]."""
+
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Generic, TypeVar
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
 from app.models.message import Message
 from app.models.tool import ToolResult
 
-T = TypeVar("T")
 
-
-class Event(BaseModel, Generic[T]):
+class Event[T](BaseModel):
     name: str
-    occurred_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    occurred_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     payload: T
 
 

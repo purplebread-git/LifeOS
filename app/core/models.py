@@ -4,13 +4,13 @@
 """
 from __future__ import annotations
 
-from enum import Enum
-from typing import Annotated, Any, Literal, Union
+from enum import StrEnum
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
 
-class Role(str, Enum):
+class Role(StrEnum):
     SYSTEM = "system"
     USER = "user"
     ASSISTANT = "assistant"
@@ -42,7 +42,7 @@ class FileBlock(BaseModel):
 
 
 ContentBlock = Annotated[
-    Union[TextBlock, ImageBlock, AudioBlock, FileBlock],
+    TextBlock | ImageBlock | AudioBlock | FileBlock,
     Field(discriminator="type"),
 ]
 

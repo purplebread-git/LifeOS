@@ -1,14 +1,11 @@
-from datetime import datetime, timezone
-from typing import Generic, TypeVar
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
 from app.core.models import Message, ToolResult
 
-T = TypeVar("T")
 
-
-class Event(BaseModel, Generic[T]):
+class Event[T](BaseModel):
     """Событие в системе: факт + типизированный payload.
 
     Не ABC — событие это данные, а не поведение. Конкретные типы событий
@@ -17,7 +14,7 @@ class Event(BaseModel, Generic[T]):
     """
 
     name: str
-    occurred_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    occurred_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     payload: T
 
 

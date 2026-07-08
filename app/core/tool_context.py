@@ -18,5 +18,5 @@ if TYPE_CHECKING:
 class ToolContext:
     conversation_id: str
     user_id: str | None = None
-    memory: "MemoryProvider | None" = None
+    memory: MemoryProvider | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
