@@ -7,12 +7,12 @@
 """
 
 from __future__ import annotations
-from app.models.message import Message, Role, TextBlock
+
 from app.core.agent import Agent
 from app.core.conversation_engine import ConversationEngine
 from app.core.conversation_repository import ConversationRepository
 from app.models.conversation import AgentResponse
-from app.models.message import Message, Role
+from app.models.message import Message, Role, TextBlock
 
 
 class SimpleAgent(Agent):

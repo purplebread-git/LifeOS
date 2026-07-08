@@ -1,9 +1,11 @@
+from typing import cast
+
 from app.agent import SimpleAgent, SimpleContextBuilder, SimpleConversationEngine
 from app.conversation.in_memory_repository import InMemoryConversationRepository
 from app.core.llm_provider import LLMProvider
 from app.models.message import LLMResponse, Message, Role, TextBlock
 from app.models.tool import ToolDefinition
-from typing import cast
+
 
 class _RecordingLLMProvider(LLMProvider):
     """Фейковый LLMProvider для проверки того, сколько сообщений истории

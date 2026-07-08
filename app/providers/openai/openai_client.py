@@ -56,9 +56,7 @@ class OpenAIClient:
             return response
 
         except APITimeoutError as exc:
-            raise LLMTimeoutError(
-                f"OpenAI request timed out after {self._timeout}s"
-            ) from exc
+            raise LLMTimeoutError(f"OpenAI request timed out after {self._timeout}s") from exc
         except RateLimitError as exc:
             raise LLMRateLimitError("OpenAI rate limit exceeded") from exc
         except APIConnectionError as exc:

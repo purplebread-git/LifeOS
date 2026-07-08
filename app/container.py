@@ -52,7 +52,8 @@ class Container(containers.DeclarativeContainer):
 
     config = providers.Singleton(get_settings)
 
-    plugins: providers.Provider[list[Plugin]] = providers.Object([])  # временно; заменится PluginLoader в Итерации 10
+    # временно; заменится PluginLoader в Итерации 10
+    plugins: providers.Provider[list[Plugin]] = providers.Object([])
 
     openai_api_key = providers.Callable(_unwrap_secret, config.provided.openai_api_key)
 

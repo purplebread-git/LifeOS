@@ -21,6 +21,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         if shutdown_result is not None:
             await shutdown_result
 
+
 def create_app() -> FastAPI:
     settings = get_settings()
 
