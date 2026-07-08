@@ -13,12 +13,15 @@ Agent ничего не знает о конкретных внешних сер
 ## Поток данных
 User → Conversation Engine → Context Builder → LLM Provider → Tool Manager → Plugins → External APIs
 
+## Правило направления зависимостей
+
+core/  ← ничего не импортирует из providers/plugins/memory/api/container.py
+  ↑
+models/  ← core может импортировать models; models ничего не знает про core
+  ↑
+providers/ plugins/ memory/  ← знают про core и models, не знают друг друга
+  ↑
+api/ container.py  ← знают про всё, собирают граф зависимостей
+
 ## Статус
-- [x] Итерация 1: Фундамент (config, app factory, healthcheck)
-- [ ] Итерация 2: Базовые интерфейсы (core/interfaces.py)
-- [ ] Итерация 3: LLM Provider (OpenAIProvider)
-- [ ] Итерация 4: Tool Manager
-- [ ] Итерация 5: Agent + Conversation Engine
-- [ ] Итерация 6: Memory Provider
-- [ ] Итерация 7: Plugins
-- [ ] Итерация 8: Интеграции (Telegram, Notion, ...)
+См. [docs/roadmap.md](roadmap.md)
