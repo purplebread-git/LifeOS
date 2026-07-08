@@ -7,7 +7,7 @@
 """
 
 from __future__ import annotations
-
+from app.models.message import Message, Role, TextBlock
 from app.core.agent import Agent
 from app.core.conversation_engine import ConversationEngine
 from app.core.conversation_repository import ConversationRepository
@@ -25,8 +25,11 @@ class SimpleAgent(Agent):
         self._conversation_repository = conversation_repository
 
     async def respond(self, conversation_id: str, user_input: str) -> AgentResponse:
-        conversation = await self._conversation_repository.get_by_id(conversation_id)
-        user_message = Message(role=Role.USER, content=user_input)
+        conversation = await self._conversation_repository.load(conversation_id)
+        user_message = Message(
+            role=Role.USER,
+            content=[TextBlock(text=user_input)],
+        )
 
         reply = await self._conversation_engine.run_turn(conversation, user_message)
 

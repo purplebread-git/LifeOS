@@ -9,6 +9,8 @@ Conversation — форматом OpenAI-совместимых типов уп�
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 from openai import (
     APIConnectionError,
     APIStatusError,
@@ -18,7 +20,12 @@ from openai import (
 )
 from openai.types.chat import ChatCompletion
 
-from app.core.exceptions import LLMConnectionError, LLMError, LLMRateLimitError, LLMTimeoutError
+from app.core.exceptions import (
+    LLMConnectionError,
+    LLMError,
+    LLMRateLimitError,
+    LLMTimeoutError,
+)
 from app.providers.openai.types import OpenAIMessage, OpenAIToolDef
 
 
@@ -33,14 +40,25 @@ class OpenAIClient:
         messages: list[OpenAIMessage],
         tools: list[OpenAIToolDef] | None = None,
     ) -> ChatCompletion:
-        kwargs: dict[str, object] = {"model": model, "messages": messages}
-        if tools:
-            kwargs["tools"] = tools
-
         try:
-            return await self._client.chat.completions.create(**kwargs)  # type: ignore[arg-type]
+            if tools:
+                response = await self._client.chat.completions.create(
+                    model=model,
+                    messages=cast(Any, messages),
+                    tools=cast(Any, tools),
+                )
+            else:
+                response = await self._client.chat.completions.create(
+                    model=model,
+                    messages=cast(Any, messages),
+                )
+
+            return response
+
         except APITimeoutError as exc:
-            raise LLMTimeoutError(f"OpenAI request timed out after {self._timeout}s") from exc
+            raise LLMTimeoutError(
+                f"OpenAI request timed out after {self._timeout}s"
+            ) from exc
         except RateLimitError as exc:
             raise LLMRateLimitError("OpenAI rate limit exceeded") from exc
         except APIConnectionError as exc:

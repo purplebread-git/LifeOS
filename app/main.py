@@ -11,12 +11,15 @@ from app.container import Container
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     container: Container = app.state.container
-    await container.init_resources()
+    init_result = container.init_resources()
+    if init_result is not None:
+        await init_result
     try:
         yield
     finally:
-        await container.shutdown_resources()
-
+        shutdown_result = container.shutdown_resources()
+        if shutdown_result is not None:
+            await shutdown_result
 
 def create_app() -> FastAPI:
     settings = get_settings()

@@ -1,3 +1,4 @@
+from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
@@ -24,7 +25,12 @@ class _FakeUsage:
 
 
 class _FakeCompletion:
-    def __init__(self, choices: list[_FakeChoice], model: str = "gpt-4o-mini", usage=None) -> None:
+    def __init__(
+        self,
+        choices: list[_FakeChoice],
+        model: str = "gpt-4o-mini",
+        usage: Any = None,
+    ) -> None:
         self.choices = choices
         self.model = model
         self.usage = usage
@@ -37,7 +43,9 @@ async def test_message_with_text_block_converts_correctly() -> None:
     )
     provider = OpenAIProvider(client=client, model="gpt-4o-mini")
 
-    await provider.generate(messages=[Message(role=Role.USER, content=[TextBlock(text="Привет")])])
+    await provider.generate(
+        messages=[Message(role=Role.USER, content=[TextBlock(text="Привет")])]
+    )
 
     sent_messages = client.chat.call_args.kwargs["messages"]
     assert sent_messages == [{"role": "user", "content": "Привет"}]

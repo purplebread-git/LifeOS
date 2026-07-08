@@ -3,7 +3,7 @@ from app.conversation.in_memory_repository import InMemoryConversationRepository
 from app.core.llm_provider import LLMProvider
 from app.models.message import LLMResponse, Message, Role, TextBlock
 from app.models.tool import ToolDefinition
-
+from typing import cast
 
 class _RecordingLLMProvider(LLMProvider):
     """Фейковый LLMProvider для проверки того, сколько сообщений истории
@@ -47,10 +47,13 @@ async def test_conversation_history_accumulates_across_calls() -> None:
     # Второй вызов: видит всю историю первого шага + новое сообщение (3).
     assert llm_provider.received_message_counts == [1, 3]
 
-    assert first.messages[0].content[0].text == "Ответ #1"
-    assert second.messages[0].content[0].text == "Ответ #2"
+    first_block = cast(TextBlock, first.messages[0].content[0])
+    second_block = cast(TextBlock, second.messages[0].content[0])
 
-    conversation = await repository.get_by_id("conv-1")
+    assert first_block.text == "Ответ #1"
+    assert second_block.text == "Ответ #2"
+
+    conversation = await repository.load("conv-1")
     assert len(conversation.messages) == 4  # user, assistant, user, assistant
 
 

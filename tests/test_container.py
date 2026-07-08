@@ -7,7 +7,7 @@ test_agent.py с фейковым LLMProvider.
 """
 
 import pytest_asyncio
-
+from collections.abc import AsyncGenerator
 from app.container import Container
 from app.core.agent import Agent
 from app.core.conversation_engine import ConversationEngine
@@ -18,11 +18,15 @@ from app.providers.openai import OpenAIProvider
 
 
 @pytest_asyncio.fixture
-async def container() -> Container:
+async def container() -> AsyncGenerator[Container, None]:
     c = Container()
-    await c.init_resources()
+    init_result = c.init_resources()
+    if init_result is not None:
+        await init_result
     yield c
-    await c.shutdown_resources()
+    shutdown_result = c.shutdown_resources()
+    if shutdown_result is not None:
+        await shutdown_result
 
 
 async def test_container_resolves_agent(container: Container) -> None:
