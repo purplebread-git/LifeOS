@@ -3,6 +3,7 @@ import pytest
 from app.models.message import ImageBlock, Message, Role, TextBlock
 from app.models.tool import ToolDefinition
 from app.providers.openai import mapper
+from app.models.message import ToolCall
 
 
 def test_message_to_openai_converts_text_block() -> None:
@@ -37,3 +38,29 @@ def test_tool_definition_to_openai_matches_function_calling_schema() -> None:
             "parameters": {"type": "object", "properties": {"query": {"type": "string"}}},
         },
     }
+
+def test_message_to_openai_converts_tool_calls() -> None:
+    message = Message(
+        role=Role.ASSISTANT,
+        content=[TextBlock(text="")],
+        tool_calls=[
+            ToolCall(
+                id="call_1",
+                tool_name="search",
+                arguments={"query": "hello"},
+            )
+        ],
+    )
+
+    result = mapper.message_to_openai(message)
+
+    assert result["tool_calls"] == [
+        {
+            "id": "call_1",
+            "type": "function",
+            "function": {
+                "name": "search",
+                "arguments": '{"query": "hello"}',
+            },
+        }
+    ]
