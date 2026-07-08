@@ -10,16 +10,10 @@ from app.models.tool import ToolDefinition, ToolResult
 
 class SimpleToolManager(ToolManager):
     def __init__(self, tools: list[Tool]) -> None:
-        self._tools: dict[str, Tool] = {
-            tool.definition.name: tool
-            for tool in tools
-        }
+        self._tools: dict[str, Tool] = {tool.definition.name: tool for tool in tools}
 
     def tool_definitions(self) -> list[ToolDefinition]:
-        return [
-            tool.definition
-            for tool in self._tools.values()
-        ]
+        return [tool.definition for tool in self._tools.values()]
 
     async def execute(
         self,
