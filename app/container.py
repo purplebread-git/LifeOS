@@ -11,7 +11,11 @@ from collections.abc import AsyncIterator
 from dependency_injector import containers, providers
 from pydantic import SecretStr
 
-from app.agent import SimpleAgent, SimpleContextBuilder, SimpleConversationEngine
+from app.agent import (
+    SimpleAgent,
+    SimpleContextBuilder,
+    ToolConversationEngine,
+)
 from app.config.settings import get_settings
 from app.conversation.in_memory_repository import InMemoryConversationRepository
 from app.core.plugin import Plugin
@@ -19,6 +23,7 @@ from app.memory.in_memory_provider import InMemoryMemoryProvider
 from app.plugins.manager import SimplePluginManager
 from app.plugins.registry import SimplePluginRegistry
 from app.providers.openai import OpenAIClient, OpenAIProvider
+from app.tools.simple_tool_manager import SimpleToolManager
 
 
 def _unwrap_secret(secret: SecretStr) -> str:
@@ -80,13 +85,19 @@ class Container(containers.DeclarativeContainer):
         plugins=plugins,
         registry=plugin_registry,
     )
+    tool_manager = providers.Singleton(
+        SimpleToolManager,
+        tools=[],
+    )
 
     context_builder = providers.Singleton(SimpleContextBuilder)
 
     conversation_engine = providers.Singleton(
-        SimpleConversationEngine,
+        ToolConversationEngine,
         llm_provider=llm_provider,
         context_builder=context_builder,
+        tool_manager=tool_manager,
+        memory_provider=memory_provider,
     )
 
     agent = providers.Singleton(
