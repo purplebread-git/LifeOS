@@ -38,6 +38,7 @@ def test_tool_definition_to_openai_matches_function_calling_schema() -> None:
         },
     }
 
+
 def test_message_to_openai_converts_tool_calls() -> None:
     message = Message(
         role=Role.ASSISTANT,

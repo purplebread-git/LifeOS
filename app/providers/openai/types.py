@@ -15,18 +15,22 @@ class OpenAIMessage(TypedDict):
     tool_call_id: NotRequired[str]
     tool_calls: NotRequired[list[OpenAIToolCall]]
 
+
 class OpenAIFunctionDef(TypedDict):
     name: str
     description: str
     parameters: dict[str, Any]
 
+
 class OpenAIToolDef(TypedDict):
     type: Literal["function"]
     function: OpenAIFunctionDef
 
+
 class OpenAIFunctionCall(TypedDict):
     name: str
     arguments: str
+
 
 class OpenAIToolCall(TypedDict):
     id: str
