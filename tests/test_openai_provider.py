@@ -20,7 +20,7 @@ class _FakeOpenAIToolCall:
 
 
 class _FakeMessage:
-    def __init__(self, role: str, content: str, tool_calls: Any = None) -> None:
+    def __init__(self, role: str, content: str | None, tool_calls: Any = None) -> None:
         self.role = role
         self.content = content
         self.tool_calls = tool_calls
@@ -30,7 +30,7 @@ class _FakeChoice:
     def __init__(
         self,
         role: str,
-        content: str,
+        content: str | None,
         finish_reason: str = "stop",
         tool_calls: Any = None,
     ) -> None:
