@@ -1,9 +1,8 @@
 import pytest
 
-from app.models.message import ImageBlock, Message, Role, TextBlock
+from app.models.message import ImageBlock, Message, Role, TextBlock, ToolCall
 from app.models.tool import ToolDefinition
 from app.providers.openai import mapper
-from app.models.message import ToolCall
 
 
 def test_message_to_openai_converts_text_block() -> None:
