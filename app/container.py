@@ -23,6 +23,7 @@ from app.memory.in_memory_provider import InMemoryMemoryProvider
 from app.plugins.manager import SimplePluginManager
 from app.plugins.registry import SimplePluginRegistry
 from app.providers.openai import OpenAIClient, OpenAIProvider
+from app.tools import RememberTool, SearchMemoryTool
 from app.tools.simple_tool_manager import SimpleToolManager
 
 
@@ -87,7 +88,10 @@ class Container(containers.DeclarativeContainer):
     )
     tool_manager = providers.Singleton(
         SimpleToolManager,
-        tools=[],
+        tools=[
+            RememberTool(),
+            SearchMemoryTool(),
+        ],
     )
 
     context_builder = providers.Singleton(SimpleContextBuilder)
