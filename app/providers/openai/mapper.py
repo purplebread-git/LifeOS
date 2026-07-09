@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from app.models.message import LLMResponse, Message, Role, TextBlock
+from app.models.message import LLMResponse, Message, Role, TextBlock, ToolCall
 from app.models.tool import ToolDefinition
 from app.providers.openai.types import OpenAIFunctionDef, OpenAIMessage, OpenAIToolDef
 
@@ -85,9 +85,12 @@ def completion_to_llm_response(completion: Any) -> LLMResponse:
     role = _OPENAI_TO_ROLE.get(choice.message.role, Role.ASSISTANT)
     content = choice.message.content or ""
 
+    tool_calls = _openai_tool_calls_to_tool_calls(choice.message)
+
     message = Message(
         role=role,
         content=[TextBlock(text=content)],
+        tool_calls=tool_calls,
     )
 
     usage = completion.usage.model_dump() if completion.usage else {}
@@ -100,3 +103,25 @@ def completion_to_llm_response(completion: Any) -> LLMResponse:
             "usage": usage,
         },
     )
+
+
+def _openai_tool_calls_to_tool_calls(openai_message: Any) -> list[ToolCall]:
+    """Обратная конвертация OpenAI tool_calls -> ToolCall.
+
+    getattr используется намеренно: старые/фейковые объекты сообщений в
+    тестах не всегда несут атрибут tool_calls, а реальный SDK-объект
+    отдаёт None, если tool calls не было — оба случая не должны падать.
+    """
+    raw_tool_calls = getattr(openai_message, "tool_calls", None)
+
+    if not raw_tool_calls:
+        return []
+
+    return [
+        ToolCall(
+            id=raw_tool_call.id,
+            tool_name=raw_tool_call.function.name,
+            arguments=json.loads(raw_tool_call.function.arguments),
+        )
+        for raw_tool_call in raw_tool_calls
+    ]

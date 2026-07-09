@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 
 from app.models.message import ImageBlock, Message, Role, TextBlock, ToolCall
@@ -64,3 +66,52 @@ def test_message_to_openai_converts_tool_calls() -> None:
             },
         }
     ]
+
+
+def test_completion_to_llm_response_converts_tool_calls() -> None:
+    completion = SimpleNamespace(
+        choices=[
+            SimpleNamespace(
+                message=SimpleNamespace(
+                    role="assistant",
+                    content=None,
+                    tool_calls=[
+                        SimpleNamespace(
+                            id="call_1",
+                            function=SimpleNamespace(
+                                name="search",
+                                arguments='{"query": "hello"}',
+                            ),
+                        )
+                    ],
+                ),
+                finish_reason="tool_calls",
+            )
+        ],
+        model="gpt-4o-mini",
+        usage=None,
+    )
+
+    result = mapper.completion_to_llm_response(completion)
+
+    assert result.message.tool_calls == [
+        ToolCall(id="call_1", tool_name="search", arguments={"query": "hello"})
+    ]
+    assert result.finish_reason == "tool_calls"
+
+
+def test_completion_to_llm_response_without_tool_calls_returns_empty_list() -> None:
+    completion = SimpleNamespace(
+        choices=[
+            SimpleNamespace(
+                message=SimpleNamespace(role="assistant", content="Привет!"),
+                finish_reason="stop",
+            )
+        ],
+        model="gpt-4o-mini",
+        usage=None,
+    )
+
+    result = mapper.completion_to_llm_response(completion)
+
+    assert result.message.tool_calls == []

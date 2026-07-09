@@ -3,19 +3,38 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from app.models.message import ImageBlock, Message, Role, TextBlock
+from app.models.message import ImageBlock, Message, Role, TextBlock, ToolCall
 from app.providers.openai.openai_provider import OpenAIProvider
 
 
+class _FakeFunctionCall:
+    def __init__(self, name: str, arguments: str) -> None:
+        self.name = name
+        self.arguments = arguments
+
+
+class _FakeOpenAIToolCall:
+    def __init__(self, id: str, name: str, arguments: str) -> None:
+        self.id = id
+        self.function = _FakeFunctionCall(name=name, arguments=arguments)
+
+
 class _FakeMessage:
-    def __init__(self, role: str, content: str) -> None:
+    def __init__(self, role: str, content: str, tool_calls: Any = None) -> None:
         self.role = role
         self.content = content
+        self.tool_calls = tool_calls
 
 
 class _FakeChoice:
-    def __init__(self, role: str, content: str, finish_reason: str = "stop") -> None:
-        self.message = _FakeMessage(role=role, content=content)
+    def __init__(
+        self,
+        role: str,
+        content: str,
+        finish_reason: str = "stop",
+        tool_calls: Any = None,
+    ) -> None:
+        self.message = _FakeMessage(role=role, content=content, tool_calls=tool_calls)
         self.finish_reason = finish_reason
 
 
@@ -82,3 +101,33 @@ async def test_llm_response_assembled_correctly() -> None:
     assert response.message.content[0].text == "Ответ"
     assert response.metadata["model"] == "gpt-4o-mini"
     assert response.metadata["usage"]["total_tokens"] == 15
+
+
+async def test_llm_response_includes_tool_calls() -> None:
+    client = AsyncMock()
+    client.chat.return_value = _FakeCompletion(
+        choices=[
+            _FakeChoice(
+                role="assistant",
+                content=None,
+                finish_reason="tool_calls",
+                tool_calls=[
+                    _FakeOpenAIToolCall(
+                        id="call_1",
+                        name="search",
+                        arguments='{"query": "hello"}',
+                    )
+                ],
+            )
+        ],
+    )
+    provider = OpenAIProvider(client=client, model="gpt-4o-mini")
+
+    response = await provider.generate(
+        messages=[Message(role=Role.USER, content=[TextBlock(text="Найди что-нибудь")])]
+    )
+
+    assert response.message.tool_calls == [
+        ToolCall(id="call_1", tool_name="search", arguments={"query": "hello"})
+    ]
+    assert response.finish_reason == "tool_calls"
