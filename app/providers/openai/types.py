@@ -13,6 +13,7 @@ class OpenAIMessage(TypedDict):
     role: str
     content: str
     tool_call_id: NotRequired[str]
+    tool_calls: NotRequired[list[OpenAIToolCall]]
 
 
 class OpenAIFunctionDef(TypedDict):
@@ -24,3 +25,14 @@ class OpenAIFunctionDef(TypedDict):
 class OpenAIToolDef(TypedDict):
     type: Literal["function"]
     function: OpenAIFunctionDef
+
+
+class OpenAIFunctionCall(TypedDict):
+    name: str
+    arguments: str
+
+
+class OpenAIToolCall(TypedDict):
+    id: str
+    type: Literal["function"]
+    function: OpenAIFunctionCall
