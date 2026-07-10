@@ -1,146 +1,75 @@
-# LifeOS Agent — Architecture
+LifeOS Agent — Roadmap
 
-## Принцип
+* Foundation
+* Core interfaces (ABC)
+* DI Container (dependency-injector)
+* OpenAIProvider (+ нормализация: mapper, TypedDict, SecretStr, exceptions)
+* ConversationRepository + InMemoryConversationRepository
+* Real Agent (SimpleAgent, stubs.py удалён)
 
-Agent ничего не знает о конкретных внешних сервисах (Telegram, Notion, GitHub и т.д.).
+Tooling & ReAct
 
-Он знает только про абстракции:
+* ToolManager
+* ReAct ConversationEngine (ToolConversationEngine)
+* ExecutionContext
+* Tool Calling Loop
+* RememberTool
+* SearchMemoryTool
 
-- LLMProvider
-- MemoryProvider
-- Tool
-- Plugin
-- Event
+Memory
 
----
+* MemoryProvider (ABC)
+* InMemoryMemoryProvider
+* Memory Tool Integration
+* Memory Context Integration
+* ContextBuilder
+* Production MemoryProvider
+* Semantic Search
+* Memory Ranking / Relevance
 
-## Поток данных
+Platform
 
-User
-→ Conversation Engine
-→ Context Builder
-→ LLM Provider
-→ Tool Manager
-→ Plugins
-→ External APIs
+* Plugins (реальные интеграции)
+* Streaming
+* Observability
+* MCP
+* Multi-agent
+* Web UI
 
----
+⸻
 
-## Правило направления зависимостей
+Текущая итерация: Memory Context Integration
 
-core/
-← ничего не импортирует из providers/plugins/memory/api/container.py
+Цель:
 
-↑
-
-models/
-← core может импортировать models
-← models ничего не знает про core
-
-↑
-
-providers/ plugins/ memory/
-← знают про core и models
-← не знают друг друга
-
-↑
-
-api/ container.py
-← знают про всё
-← собирают граф зависимостей
-
----
-
-## Реализовано
-
-### Core
-
-- Tool
-- Plugin
-- PluginRegistry
-- PluginManager
-- ToolManager
-
-### Providers
-
-- OpenAIProvider
-
-### Infrastructure
-
-- Dependency Injector
-- FastAPI
-- Health endpoint
-
-### Tests
-
-- Ruff
-- MyPy
-- Pytest
-
-Текущий статус:
-
-- Ruff ✅
-- MyPy ✅
-- Pytest ✅
-
-Последний результат:
-
-```text
-15 passed
-```
-
----
-
-## Важные решения
-
-### ToolManager
-
-Обрабатывает только:
-
-- ToolExecutionError
-
-Не обрабатывает:
-
-- RuntimeError
-- ValueError
-- Exception
-
-Неожиданные ошибки должны подниматься вверх.
-
-### Models
-
-Использовать:
-
-- app/models/message.py
-- app/models/tool.py
-
-Не использовать:
-
-- app/core/models.py
-
-Причина:
-
-core/models.py содержит устаревшие дубликаты моделей.
-
----
-
-## Следующий этап
-
-Conversation Engine Tool Loop
+Автоматически использовать релевантную память при построении контекста для LLM без явного вызова инструментов.
 
 Нужно реализовать:
 
-1. Получение tool calls от LLM
-2. Выполнение через ToolManager
-3. Возврат ToolResult в контекст диалога
-4. Повторный вызов LLM
-5. Завершение цикла при отсутствии tool calls
+1. Поиск релевантной памяти по последнему сообщению пользователя.
+2. Интеграцию найденной памяти в контекст диалога.
+3. Ограничение количества воспоминаний (top_k).
+4. Форматирование памяти для prompt.
+5. Unit-тесты для Memory Context Integration.
 
----
+⸻
 
-## Как продолжать проект в новом чате
+Известные архитектурные натяжения
 
-1. Прочитать этот файл.
-2. Прочитать docs/roadmap.md.
-3. Посмотреть текущий git diff.
-4. Продолжить работу с пункта "Следующий этап".
+AgentResponse vs Conversation
+
+AgentResponse.messages содержит только новый ответ ассистента, тогда как Conversation.messages хранит полную историю.
+
+Требуется единое решение на этапе развития API.
+
+Mutable Conversation
+
+ConversationRepository.get_by_id() возвращает mutable-объект.
+
+При многопоточном доступе потребуется либо immutable-модель, либо механизм блокировок.
+
+InMemory Memory Provider
+
+Текущая реализация подходит только для разработки и тестов.
+
+Для production потребуется постоянное хранилище и механизм поиска по памяти.
