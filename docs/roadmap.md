@@ -1,48 +1,176 @@
-# LifeOS Agent — Roadmap
+Roadmap
 
-- [x] Foundation
-- [x] Core interfaces (ABC)
-- [x] DI Container (dependency-injector)
-- [x] OpenAIProvider (+ нормализация: mapper, TypedDict, SecretStr, exceptions)
-- [x] ConversationRepository + InMemoryConversationRepository
-- [x] Real Agent (SimpleAgent, stubs.py удалён)
-- [ ] ToolManager — инфраструктура диспетчеризации (без ReAct-цикла)
-- [ ] Real ConversationEngine (ReAct-цикл: интеграция ToolManager)
-- [ ] Production MemoryProvider
-- [ ] Plugins (реальные интеграции)
-- [ ] Streaming
-- [ ] Observability
-- [ ] MCP
-- [ ] Multi-agent
-- [ ] Web UI
+Phase 1 — Foundation
 
-## Известные архитектурные натяжения (не баги, но требуют решения позже)
+Базовый каркас агентной системы.
 
-1. **AgentResponse vs Conversation.** `AgentResponse.messages` содержит
-   только новый ответ ассистента, в то время как `Conversation.messages`
-   уже хранит полную историю. Это два разных представления одного
-   разговора. Решать вместе с дизайном `api/` — не раньше.
-2. **Mutable Conversation.** `ConversationRepository.get_by_id()` отдаёт
-   mutable-объект, который затем мутирует `ConversationEngine`. Работает,
-   но если понадобится многопоточный/многопроцессный доступ к одному
-   разговору — потребуется либо immutable-модель + explicit save,
-   либо блокировки на уровне репозитория.
-3. 
-## Согласованный контракт следующей итерации (ToolManager)
+Done
 
-```python
-class ToolManager(ABC):
-    @abstractmethod
-    def tool_definitions(self) -> list[ToolDefinition]: ...
+* Domain Models
+* Message
+* Conversation
+* AgentResponse
+* Core Interfaces
+* Agent
+* LLMProvider
+* ConversationRepository
+* OpenAIProvider
+* OpenAI Response Mapping
+* Typed Models
+* Error Handling
+* InMemoryConversationRepository
+* Dependency Injection Container
+* SimpleAgent
+* Real LLM Integration
 
-    @abstractmethod
-    async def execute(self, tool_call: ToolCall, context: ExecutionContext) -> ToolResult: ...
-```
+⸻
 
-Правило обработки ошибок: execute() ловит только ToolExecutionError и
-превращает в ToolResult(is_error=True, ...). Прочие исключения (баги в
-коде инструмента) пробрасываются дальше — не маскируются.
+Phase 2 — Tooling & ReAct
 
-Итерация строит ТОЛЬКО диспетчер (definitions + execute по имени).
-Без ReAct-цикла, без интеграции в ConversationEngine — это отдельная
-итерация после.
+Добавление инструментов и циклов выполнения.
+
+Done
+
+* Tool Interface
+* ToolManager
+* Tool Registry
+* ExecutionContext
+* Tool Calling Models
+* Tool Call Parsing
+* Tool Result Processing
+* ToolConversationEngine
+* ReAct Loop
+
+Remaining
+
+* Tool Validation Layer
+* Tool Permissions
+* Tool Categories
+
+⸻
+
+Phase 3 — Memory
+
+Создание долговременной памяти агента.
+
+Done
+
+* MemoryEntry
+* MemoryProvider Interface
+* InMemoryMemoryProvider
+* RememberTool
+* SearchMemoryTool
+* Memory Integration Through Tools
+
+Current Iteration
+
+* Memory Context Integration
+
+Planned Scope
+
+* Search relevant memories before LLM call
+* Inject memories into prompt context
+* Top-K memory selection
+* Memory formatting strategy
+* Unit tests
+* Integration tests
+
+Future Memory Work
+
+* Persistent MemoryProvider
+* SQLite Memory Provider
+* Vector Memory Provider
+* Semantic Search
+* Relevance Ranking
+* Memory Expiration Policies
+* Memory Summarization
+
+⸻
+
+Phase 4 — Context System
+
+Формирование интеллектуального контекста.
+
+Planned
+
+* ContextBuilder
+* Context Layers
+* System Context
+* Memory Context
+* Conversation Context
+* Context Trimming
+* Token Budget Management
+
+⸻
+
+Phase 5 — Knowledge
+
+Работа со знаниями и документами.
+
+Planned
+
+* Knowledge Base
+* Document Storage
+* RAG Pipeline
+* Embeddings
+* Search Layer
+
+⸻
+
+Phase 6 — Platform
+
+Развитие платформы.
+
+Planned
+
+* Plugin System
+* MCP Integration
+* Streaming
+* Observability
+* Metrics
+* Tracing
+* Configuration System
+
+⸻
+
+Phase 7 — Agent Ecosystem
+
+Переход к сложным агентным сценариям.
+
+Planned
+
+* Multi-Agent Architecture
+* Agent Registry
+* Agent Collaboration
+* Task Delegation
+
+⸻
+
+Interfaces Status
+
+Stable
+
+* Agent
+* LLMProvider
+* ConversationRepository
+* MemoryProvider
+* Tool
+
+Under Active Development
+
+* ContextBuilder
+
+Not Started
+
+* KnowledgeProvider
+* PluginProvider
+
+⸻
+
+Current Focus
+
+Memory Context Integration
+
+Цель:
+
+Агент должен автоматически использовать релевантные воспоминания при построении контекста без необходимости явного вызова memory-инструментов.
