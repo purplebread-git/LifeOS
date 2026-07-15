@@ -1,14 +1,15 @@
-LifeOS Agent — Roadmap
+LifeOS Agent — Architecture Status
 
-* Foundation
+## Completed
+
+### Foundation
 * Core interfaces (ABC)
 * DI Container (dependency-injector)
 * OpenAIProvider (+ нормализация: mapper, TypedDict, SecretStr, exceptions)
 * ConversationRepository + InMemoryConversationRepository
-* Real Agent (SimpleAgent, stubs.py удалён)
+* Real Agent (SimpleAgent)
 
-Tooling & ReAct
-
+### Tooling & ReAct
 * ToolManager
 * ReAct ConversationEngine (ToolConversationEngine)
 * ExecutionContext
@@ -16,19 +17,59 @@ Tooling & ReAct
 * RememberTool
 * SearchMemoryTool
 
-Memory
-
+### Memory
 * MemoryProvider (ABC)
 * InMemoryMemoryProvider
-* Memory Tool Integration
-* Memory Context Integration
-* ContextBuilder
-* Production MemoryProvider
+* Memory Tool Integration (remember / search_memory via ExecutionContext)
+* Memory Context Integration (автоматическая инъекция памяти в LLM-контекст)
+
+⸻
+
+## Текущий поток: Memory Context
+
+```
+User Message
+    ↓
+SimpleAgent.respond()
+    ↓
+ToolConversationEngine.run_turn()
+    ↓
+SimpleContextBuilder.build()
+    ├── last USER message → MemoryProvider.search()
+    └── [system: memories] + conversation.messages
+    ↓
+LLMProvider.generate()
+```
+
+Два независимых пути к памяти:
+
+| Режим | Путь |
+|-------|------|
+| Автоматический | ContextBuilder → MemoryProvider.search() → system prompt |
+| Явный (tools) | LLM → remember / search_memory → ExecutionContext.memory |
+
+⸻
+
+## Следующие направления
+
+### Memory
 * Semantic Search
 * Memory Ranking / Relevance
+* Memory Search Query Builder — извлечение search query из мультимодальных сообщений (TextBlock + будущие ImageBlock и др.)
+* Persistent MemoryProvider
 
-Platform
+### Context System
+* Layered ContextBuilder: System / Memory / Conversation / Knowledge
+* Token Budget
+* Context Trimming
 
+### Knowledge
+* Knowledge Base
+* RAG
+* Embeddings
+* Search Layer
+
+### Platform
 * Plugins (реальные интеграции)
 * Streaming
 * Observability
@@ -38,38 +79,41 @@ Platform
 
 ⸻
 
-Текущая итерация: Memory Context Integration
+## Известные архитектурные натяжения
 
-Цель:
-
-Автоматически использовать релевантную память при построении контекста для LLM без явного вызова инструментов.
-
-Нужно реализовать:
-
-1. Поиск релевантной памяти по последнему сообщению пользователя.
-2. Интеграцию найденной памяти в контекст диалога.
-3. Ограничение количества воспоминаний (top_k).
-4. Форматирование памяти для prompt.
-5. Unit-тесты для Memory Context Integration.
-
-⸻
-
-Известные архитектурные натяжения
-
-AgentResponse vs Conversation
+### AgentResponse vs Conversation
 
 AgentResponse.messages содержит только новый ответ ассистента, тогда как Conversation.messages хранит полную историю.
 
 Требуется единое решение на этапе развития API.
 
-Mutable Conversation
+### Mutable Conversation
 
-ConversationRepository.get_by_id() возвращает mutable-объект.
+ConversationRepository.load() возвращает mutable-объект.
 
 При многопоточном доступе потребуется либо immutable-модель, либо механизм блокировок.
 
-InMemory Memory Provider
+### InMemory Memory Provider
 
 Текущая реализация подходит только для разработки и тестов.
 
 Для production потребуется постоянное хранилище и механизм поиска по памяти.
+
+### Memory Context Cache (задел, не активен)
+
+SimpleContextBuilder читает `conversation.metadata["memory_context"]` как turn-scoped кэш.
+Сейчас никто не записывает это значение — кэш read-only, бага нет.
+
+При активации кэша: ownership должен остаться turn-scoped.
+`metadata` сохраняется в репозиторий вместе с Conversation — без очистки
+кэш переживёт save/load и вернёт устаревшие воспоминания на следующем turn.
+
+Рекомендация: при включении кэша перенести ownership в ConversationEngine
+и очищать ключ до/после `repository.save()`.
+
+### ContextBuilder и Conversation.metadata
+
+ContextBuilder сейчас читает служебное состояние из `Conversation.metadata`.
+По мере роста Context System (knowledge_context, token_budget и др.)
+это может превратиться в скрытую зависимость. Рассмотреть выделение
+turn-scoped execution state в отдельную абстракцию.

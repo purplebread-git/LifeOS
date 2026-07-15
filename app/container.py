@@ -94,7 +94,10 @@ class Container(containers.DeclarativeContainer):
         ],
     )
 
-    context_builder = providers.Singleton(SimpleContextBuilder)
+    context_builder = providers.Singleton(
+        SimpleContextBuilder,
+        memory_provider=memory_provider,
+    )
 
     conversation_engine = providers.Singleton(
         ToolConversationEngine,
