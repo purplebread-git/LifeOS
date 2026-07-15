@@ -23,15 +23,18 @@
 - [x] RememberTool
 - [x] SearchMemoryTool
 - [x] Memory Tool Integration
-
-### Current
-- [ ] Memory Context Integration
+- [x] Memory Context Integration
 
 ### Next
-- [ ] ContextBuilder
 - [ ] Semantic Search
 - [ ] Memory Ranking
+- [ ] Memory Search Query Builder
 - [ ] Persistent MemoryProvider
+
+## Context System
+- [ ] Layered ContextBuilder (System / Memory / Conversation / Knowledge)
+- [ ] Token Budget
+- [ ] Context Trimming
 
 ## Knowledge
 - [ ] Knowledge Base
