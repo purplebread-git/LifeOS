@@ -1,176 +1,52 @@
-Roadmap
+# Roadmap
+## Foundation
+- [x] Core interfaces (ABC)
+- [x] Domain models
+- [x] Dependency Injection Container
+- [x] OpenAIProvider
+- [x] ConversationRepository
+- [x] Real Agent
+- 
+## Tooling & ReAct
+- [x] Tool Interface
+- [x] ToolManager
+- [x] ExecutionContext
+- [x] Tool Calling
+- [x] ReAct Loop
+- [x] ToolConversationEngine
+- 
+## Memory
+### Done
+- [x] MemoryProvider
+- [x] InMemoryMemoryProvider
+- [x] MemoryEntry
+- [x] RememberTool
+- [x] SearchMemoryTool
+- [x] Memory Tool Integration
 
-Phase 1 — Foundation
+### Current
+- [ ] Memory Context Integration
 
-Базовый каркас агентной системы.
+### Next
+- [ ] ContextBuilder
+- [ ] Semantic Search
+- [ ] Memory Ranking
+- [ ] Persistent MemoryProvider
 
-Done
-
-* Domain Models
-* Message
-* Conversation
-* AgentResponse
-* Core Interfaces
-* Agent
-* LLMProvider
-* ConversationRepository
-* OpenAIProvider
-* OpenAI Response Mapping
-* Typed Models
-* Error Handling
-* InMemoryConversationRepository
-* Dependency Injection Container
-* SimpleAgent
-* Real LLM Integration
-
-⸻
-
-Phase 2 — Tooling & ReAct
-
-Добавление инструментов и циклов выполнения.
-
-Done
-
-* Tool Interface
-* ToolManager
-* Tool Registry
-* ExecutionContext
-* Tool Calling Models
-* Tool Call Parsing
-* Tool Result Processing
-* ToolConversationEngine
-* ReAct Loop
-
-Remaining
-
-* Tool Validation Layer
-* Tool Permissions
-* Tool Categories
-
-⸻
-
-Phase 3 — Memory
-
-Создание долговременной памяти агента.
-
-Done
-
-* MemoryEntry
-* MemoryProvider Interface
-* InMemoryMemoryProvider
-* RememberTool
-* SearchMemoryTool
-* Memory Integration Through Tools
-
-Current Iteration
-
-* Memory Context Integration
-
-Planned Scope
-
-* Search relevant memories before LLM call
-* Inject memories into prompt context
-* Top-K memory selection
-* Memory formatting strategy
-* Unit tests
-* Integration tests
-
-Future Memory Work
-
-* Persistent MemoryProvider
-* SQLite Memory Provider
-* Vector Memory Provider
-* Semantic Search
-* Relevance Ranking
-* Memory Expiration Policies
-* Memory Summarization
-
-⸻
-
-Phase 4 — Context System
-
-Формирование интеллектуального контекста.
-
-Planned
-
-* ContextBuilder
-* Context Layers
-* System Context
-* Memory Context
-* Conversation Context
-* Context Trimming
-* Token Budget Management
-
-⸻
-
-Phase 5 — Knowledge
-
-Работа со знаниями и документами.
-
-Planned
-
-* Knowledge Base
-* Document Storage
-* RAG Pipeline
-* Embeddings
-* Search Layer
-
-⸻
-
-Phase 6 — Platform
-
-Развитие платформы.
-
-Planned
-
-* Plugin System
-* MCP Integration
-* Streaming
-* Observability
-* Metrics
-* Tracing
-* Configuration System
-
-⸻
-
-Phase 7 — Agent Ecosystem
-
-Переход к сложным агентным сценариям.
-
-Planned
-
-* Multi-Agent Architecture
-* Agent Registry
-* Agent Collaboration
-* Task Delegation
-
-⸻
-
-Interfaces Status
-
-Stable
-
-* Agent
-* LLMProvider
-* ConversationRepository
-* MemoryProvider
-* Tool
-
-Under Active Development
-
-* ContextBuilder
-
-Not Started
-
-* KnowledgeProvider
-* PluginProvider
-
-⸻
-
-Current Focus
-
-Memory Context Integration
-
-Цель:
-
-Агент должен автоматически использовать релевантные воспоминания при построении контекста без необходимости явного вызова memory-инструментов.
+## Knowledge
+- [ ] Knowledge Base
+- [ ] RAG
+- [ ] Embeddings
+- [ ] Search Layer
+- 
+## Platform
+- [ ] Plugins
+- [ ] MCP
+- [ ] Streaming
+- [ ] Observability
+- [ ] Web UI
+- 
+## Agent Ecosystem
+- [ ] Multi-Agent
+- [ ] Agent Registry
+- [ ] Task Delegation
