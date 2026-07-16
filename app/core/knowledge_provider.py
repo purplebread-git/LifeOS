@@ -1,15 +1,28 @@
 """KnowledgeProvider — контракт источника знаний (Knowledge Base / RAG).
 
-Задел под будущее: контракт зафиксирован СЕЙЧАС, чтобы при подключении
-знания (KnowledgeContextLayer → KnowledgeProvider → VectorStore) не
-рефакторить уже существующий слой. Реализации, DI-регистрации и
-использования пока нет — только абстракция.
+Симметрично MemoryProvider, но над своей доменной сущностью (KnowledgeChunk).
+search() возвращает list[KnowledgeChunk], а не list[str]: атрибуция источника
+и метаданные нужны для цитирования и будущего scoring — строка стала бы
+архитектурным долгом.
+
+Ingestion в этом контракте — только add/add_batch готовых чанков. Chunking,
+парсинг документов и загрузка файлов сюда НЕ входят (отдельная подсистема).
 """
 
 from abc import ABC, abstractmethod
 
+from app.models.knowledge import KnowledgeChunk
+
 
 class KnowledgeProvider(ABC):
     @abstractmethod
-    async def search(self, query: str, limit: int = 5) -> list[str]:
+    async def add(self, chunk: KnowledgeChunk) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def add_batch(self, chunks: list[KnowledgeChunk]) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def search(self, query: str, limit: int = 5) -> list[KnowledgeChunk]:
         raise NotImplementedError
