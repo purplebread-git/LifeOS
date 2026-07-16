@@ -24,12 +24,12 @@
 - [x] SearchMemoryTool
 - [x] Memory Tool Integration
 - [x] Memory Context Integration
+- [x] Persistent MemoryProvider (SQLite)
 
 ### Next
 - [ ] Semantic Search
 - [ ] Memory Ranking
 - [ ] Memory Search Query Builder
-- [ ] Persistent MemoryProvider
 
 ## Context System
 - [ ] Layered ContextBuilder (System / Memory / Conversation / Knowledge)

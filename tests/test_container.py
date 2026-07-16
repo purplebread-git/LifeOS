@@ -17,13 +17,18 @@ from app.core.agent import Agent
 from app.core.conversation_engine import ConversationEngine
 from app.core.conversation_repository import ConversationRepository
 from app.core.llm_provider import LLMProvider
+from app.core.memory_provider import MemoryProvider
 from app.core.plugin_registry import PluginRegistry
+from app.memory.sqlite_memory_provider import SqliteMemoryProvider
 from app.providers.openai import OpenAIProvider
 
 
 @pytest_asyncio.fixture
 async def container() -> AsyncGenerator[Container, None]:
     environ["OPENAI_API_KEY"] = "test-key"
+    # In-memory SQLite: тест проверяет реальный persistent-бэкенд через DI,
+    # но без создания файла на диске.
+    environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 
     get_settings.cache_clear()
 
@@ -42,16 +47,28 @@ async def container() -> AsyncGenerator[Container, None]:
     get_settings.cache_clear()
 
 
+# agent / conversation_engine / memory_provider транзитивно зависят от
+# async-ресурса database, поэтому их резолв возвращает awaitable.
+
+
 async def test_container_resolves_agent(container: Container) -> None:
-    assert isinstance(container.agent(), Agent)
+    # dependency-injector типизирует резолв синхронно, но из-за async-ресурса
+    # database фактически возвращается awaitable — отсюда type: ignore.
+    assert isinstance(await container.agent(), Agent)  # type: ignore[misc]
 
 
 async def test_container_resolves_conversation_engine(container: Container) -> None:
-    assert isinstance(container.conversation_engine(), ConversationEngine)
+    assert isinstance(await container.conversation_engine(), ConversationEngine)  # type: ignore[misc]
 
 
 async def test_container_resolves_conversation_repository(container: Container) -> None:
     assert isinstance(container.conversation_repository(), ConversationRepository)
+
+
+async def test_container_resolves_memory_provider_as_sqlite(container: Container) -> None:
+    provider = await container.memory_provider()
+    assert isinstance(provider, SqliteMemoryProvider)
+    assert isinstance(provider, MemoryProvider)
 
 
 async def test_container_resolves_llm_provider_as_openai(container: Container) -> None:

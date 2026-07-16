@@ -20,6 +20,8 @@ from app.config.settings import get_settings
 from app.conversation.in_memory_repository import InMemoryConversationRepository
 from app.core.plugin import Plugin
 from app.memory.in_memory_provider import InMemoryMemoryProvider
+from app.memory.sqlite_memory_provider import SqliteMemoryProvider
+from app.persistence.database import init_database
 from app.plugins.manager import SimplePluginManager
 from app.plugins.registry import SimplePluginRegistry
 from app.providers.openai import OpenAIClient, OpenAIProvider
@@ -51,7 +53,8 @@ class Container(containers.DeclarativeContainer):
         ConversationRepository, PluginRegistry, ConversationEngine, Agent —
         без состояния конкретного разговора (состояние живёт внутри
         Conversation, который хранит ConversationRepository).
-      - Resource: PluginManager — явный init/shutdown жизненного цикла.
+      - Resource: PluginManager, database (engine) — явный init/shutdown
+        жизненного цикла.
       - ExecutionContext НЕ регистрируется здесь — transient-данные
         конкретного вызова инструмента.
     """
@@ -75,7 +78,25 @@ class Container(containers.DeclarativeContainer):
         model=config.provided.openai_model,
     )
 
-    memory_provider = providers.Singleton(InMemoryMemoryProvider)
+    database = providers.Resource(
+        init_database,
+        database_url=config.provided.database_url,
+    )
+
+    in_memory_provider = providers.Singleton(InMemoryMemoryProvider)
+
+    sqlite_memory_provider = providers.Singleton(
+        SqliteMemoryProvider,
+        session_factory=database,
+    )
+
+    # Provider Pattern: бэкенд памяти выбирается по настройке memory_backend.
+    # Добавление Postgres/Redis/Vector-провайдера не меняет остальной граф.
+    memory_provider = providers.Selector(
+        config.provided.memory_backend,
+        memory=in_memory_provider,
+        sqlite=sqlite_memory_provider,
+    )
 
     conversation_repository = providers.Singleton(InMemoryConversationRepository)
 

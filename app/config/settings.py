@@ -1,7 +1,10 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+MemoryBackend = Literal["memory", "sqlite"]
 
 
 class Settings(BaseSettings):
@@ -21,6 +24,7 @@ class Settings(BaseSettings):
     openai_timeout: float = 60.0
 
     database_url: str = "sqlite+aiosqlite:///./lifeos.db"
+    memory_backend: MemoryBackend = "sqlite"
 
 
 @lru_cache
