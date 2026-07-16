@@ -13,10 +13,17 @@ from pydantic import SecretStr
 
 from app.agent import (
     SimpleAgent,
-    SimpleContextBuilder,
     ToolConversationEngine,
 )
 from app.config.settings import get_settings
+from app.context import (
+    DEFAULT_SYSTEM_PROMPT,
+    ConversationHistoryLayer,
+    KnowledgeContextLayer,
+    LayeredContextBuilder,
+    MemoryContextLayer,
+    SystemPromptLayer,
+)
 from app.conversation.in_memory_repository import InMemoryConversationRepository
 from app.core.plugin import Plugin
 from app.memory.in_memory_provider import InMemoryMemoryProvider
@@ -115,9 +122,16 @@ class Container(containers.DeclarativeContainer):
         ],
     )
 
+    # Context System: порядок слоёв задаётся здесь. Добавление нового слоя
+    # (например, Knowledge/RAG) не меняет LayeredContextBuilder.
     context_builder = providers.Singleton(
-        SimpleContextBuilder,
-        memory_provider=memory_provider,
+        LayeredContextBuilder,
+        layers=providers.List(
+            providers.Singleton(SystemPromptLayer, system_prompt=DEFAULT_SYSTEM_PROMPT),
+            providers.Singleton(MemoryContextLayer, memory_provider=memory_provider),
+            providers.Singleton(KnowledgeContextLayer),
+            providers.Singleton(ConversationHistoryLayer),
+        ),
     )
 
     conversation_engine = providers.Singleton(
