@@ -38,13 +38,20 @@
 - [ ] Token Budget
 - [ ] Context Trimming
 
-## Knowledge
-- [x] KnowledgeProvider (ABC, контракт-задел)
-- [ ] KnowledgeContextLayer (реальный поиск)
-- [ ] Knowledge Base
-- [ ] RAG
-- [ ] Embeddings
-- [ ] Search Layer
+## Knowledge (RAG)
+Строится по схеме памяти: Storage → Retrieval → Ranking → Context.
+
+### Done
+- [x] KnowledgeProvider (ABC: add / add_batch / search → list[KnowledgeChunk])
+- [x] KnowledgeChunk (доменная модель, отдельная от MemoryEntry)
+- [x] InMemoryKnowledgeProvider (substring, retrieval MVP)
+- [x] KnowledgeContextLayer (активен: Knowledge → Context → LLM)
+
+### Next
+- [ ] Persistent Knowledge (SQLite)
+- [ ] Ingestion / Chunking (парсинг документов, нарезка)
+- [ ] Semantic Knowledge Retrieval (embeddings + cosine)
+- [ ] Knowledge Ranking (порог/relevance)
 - 
 ## Platform
 - [ ] Plugins

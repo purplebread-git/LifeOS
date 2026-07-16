@@ -52,9 +52,21 @@ Memory Ranking (retrieval pipeline):
   ConversationHistoryLayer
 * SimpleContextBuilder — reference-реализация (conversation-only)
 
-### Knowledge (контракт-задел)
-* KnowledgeProvider (ABC) — без реализации, DI и использования; зафиксирован
-  контракт, чтобы KnowledgeContextLayer не рефакторить при подключении RAG
+### Knowledge (RAG) — retrieval MVP
+* KnowledgeProvider (ABC): add / add_batch / search → list[KnowledgeChunk]
+  (не list[str]: source + metadata нужны для цитирования и будущего scoring)
+* KnowledgeChunk — доменная модель, ОТДЕЛЬНАЯ от MemoryEntry: память и знания
+  разные сущности, их поля со временем расходятся (memory: user-specific,
+  created_at; knowledge: source, chunk, document, citations). Дублирование
+  честное, переиспользование создало бы ложную связанность
+* InMemoryKnowledgeProvider — substring-поиск, доказывает retrieval pipeline
+  (Knowledge → Context → LLM) отдельно от хранения; не переживает рестарт
+* KnowledgeContextLayer активен: ищет по последнему USER-сообщению (как память,
+  чтобы не искать по tool-выводам) и инъектирует чанки system-сообщением
+* Persistence, ingestion/chunking, semantic-поиск, ranking — отдельные шаги,
+  по той же траектории, что прошла память
+* MemoryRanker НЕ обобщался в Ranker[T]: один потребитель ranking, обобщение
+  ради красоты — преждевременно
 
 ### Persistence
 * app/persistence/ — SQLAlchemy async engine + ORM (MemoryRecord)
@@ -80,7 +92,7 @@ ToolConversationEngine.run_turn()
 LayeredContextBuilder.build()   — pipeline из ContextLayer.apply()
     ├── SystemPromptLayer        (персона/инструкции)
     ├── MemoryContextLayer       (last USER message → MemoryProvider.search())
-    ├── KnowledgeContextLayer    (stub: passthrough, задел под RAG)
+    ├── KnowledgeContextLayer    (last USER message → KnowledgeProvider.search())
     └── ConversationHistoryLayer (копия истории)
     ↓
 LLMProvider.generate()
@@ -112,11 +124,11 @@ LLMProvider.generate()
 * Token Budget
 * Context Trimming
 
-### Knowledge
-* Knowledge Base
-* RAG
-* Embeddings
-* Search Layer
+### Knowledge (RAG)
+* Persistent Knowledge (SQLite)
+* Ingestion / Chunking (парсинг документов, нарезка на чанки)
+* Semantic Knowledge Retrieval (embeddings + cosine)
+* Knowledge Ranking (порог/relevance)
 
 ### Platform
 * Plugins (реальные интеграции)
