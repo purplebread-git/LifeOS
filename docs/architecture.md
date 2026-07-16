@@ -20,8 +20,18 @@ LifeOS Agent — Architecture Status
 ### Memory
 * MemoryProvider (ABC)
 * InMemoryMemoryProvider
+* SqliteMemoryProvider (async SQLAlchemy, память переживает рестарт)
 * Memory Tool Integration (remember / search_memory via ExecutionContext)
 * Memory Context Integration (автоматическая инъекция памяти в LLM-контекст)
+
+### Persistence
+* app/persistence/ — SQLAlchemy async engine + ORM (MemoryRecord)
+* Domain (app/core/, app/models/) свободен от SQLAlchemy; перевод
+  MemoryEntry ↔ MemoryRecord живёт в провайдере
+* Схема поднимается через create_all при инициализации engine-ресурса;
+  Alembic — отдельный PR, когда появится вторая таблица
+* Выбор бэкенда памяти — providers.Selector по настройке memory_backend
+  (memory | sqlite)
 
 ⸻
 
@@ -56,7 +66,6 @@ LLMProvider.generate()
 * Semantic Search
 * Memory Ranking / Relevance
 * Memory Search Query Builder — извлечение search query из мультимодальных сообщений (TextBlock + будущие ImageBlock и др.)
-* Persistent MemoryProvider
 
 ### Context System
 * Layered ContextBuilder: System / Memory / Conversation / Knowledge
@@ -93,11 +102,14 @@ ConversationRepository.load() возвращает mutable-объект.
 
 При многопоточном доступе потребуется либо immutable-модель, либо механизм блокировок.
 
-### InMemory Memory Provider
+### Memory search — substring
 
-Текущая реализация подходит только для разработки и тестов.
+И InMemoryMemoryProvider, и SqliteMemoryProvider ищут по substring
+(LIKE) без ранжирования и семантики. Запрос вида «расскажи про меня»
+ничего не найдёт. Semantic Search / Ranking — отдельные итерации;
+интерфейс MemoryProvider.search() при этом не меняется.
 
-Для production потребуется постоянное хранилище и механизм поиска по памяти.
+InMemoryMemoryProvider остаётся для разработки и тестов (memory_backend=memory).
 
 ### Memory Context Cache (задел, не активен)
 
