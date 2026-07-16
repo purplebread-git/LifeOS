@@ -15,21 +15,21 @@
 - [x] ReAct Loop
 - [x] ToolConversationEngine
 - 
-## Memory
-### Done
-- [x] MemoryProvider
-- [x] InMemoryMemoryProvider
-- [x] MemoryEntry
-- [x] RememberTool
-- [x] SearchMemoryTool
-- [x] Memory Tool Integration
-- [x] Memory Context Integration
-- [x] Persistent MemoryProvider (SQLite)
-- [x] Semantic Search (SemanticSqliteMemoryProvider + EmbeddingProvider)
+## Memory — завершённая подсистема
+Полная цепочка: Storage → Retrieval → Ranking → Context → LLM.
 
-### Next
-- [ ] Memory Ranking (similarity threshold / weighting — score уже считается)
-- [ ] rebuild_embeddings() (reindex при смене модели / после сбоя embeddings)
+### Core (done)
+- [x] Memory Storage (MemoryProvider ABC, InMemoryMemoryProvider, MemoryEntry)
+- [x] Memory Tools (RememberTool, SearchMemoryTool, Tool Integration)
+- [x] Memory Context Integration (автоинъекция в LLM-контекст)
+- [x] Persistent Memory (SqliteMemoryProvider)
+- [x] Semantic Retrieval (SemanticSqliteMemoryProvider + EmbeddingProvider)
+- [x] Memory Ranking (MemoryRanker + ThresholdMemoryRanker, similarity threshold)
+
+### Extensions (не обязательные этапы — расширения поверх готового ядра)
+- [ ] Recency Ranking (новый MemoryRanker)
+- [ ] Hybrid Ranking / MMR / LLM Reranker
+- [ ] Memory Maintenance (rebuild_embeddings, dedup)
 - [ ] Memory Search Query Builder
 
 ## Context System
