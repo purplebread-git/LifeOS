@@ -29,6 +29,7 @@ from app.core.plugin import Plugin
 from app.memory.in_memory_provider import InMemoryMemoryProvider
 from app.memory.semantic_sqlite_memory_provider import SemanticSqliteMemoryProvider
 from app.memory.sqlite_memory_provider import SqliteMemoryProvider
+from app.memory.threshold_memory_ranker import ThresholdMemoryRanker
 from app.persistence.database import init_database
 from app.plugins.manager import SimplePluginManager
 from app.plugins.registry import SimplePluginRegistry
@@ -117,10 +118,19 @@ class Container(containers.DeclarativeContainer):
         session_factory=database,
     )
 
+    # Retrieval pipeline: провайдер собирает кандидатов, ranker применяет
+    # политику (порог/сортировка/лимит). Смена стратегии ранжирования —
+    # замена одного provider, storage не трогаем.
+    memory_ranker = providers.Singleton(
+        ThresholdMemoryRanker,
+        min_score=config.provided.memory_similarity_threshold,
+    )
+
     semantic_sqlite_memory_provider = providers.Singleton(
         SemanticSqliteMemoryProvider,
         session_factory=database,
         embedding_provider=embedding_provider,
+        ranker=memory_ranker,
     )
 
     # Provider Pattern: провайдер памяти выбирается по (backend × search_mode).

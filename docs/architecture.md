@@ -28,11 +28,22 @@ LifeOS Agent — Architecture Status
 
 Semantic search:
 * MemoryProvider.search() контракт НЕ менялся — провайдер сам эмбеддит запрос
-* similarity score считается внутри (ranking-ready), наружу — list[MemoryEntry]
 * save-always: запись сохраняется даже при сбое embeddings (embedding = NULL)
 * search: нет эмбеддинга запроса → substring по всем; иначе semantic по
   записям с эмбеддингом + substring-добор для записей с embedding IS NULL
 * похожесть — brute-force cosine (pgvector / sqlite-vec — будущее)
+
+Memory Ranking (retrieval pipeline):
+* MemoryRanker (ABC) + ThresholdMemoryRanker — политика отбора вынесена из
+  провайдера в инъектируемую стратегию
+* провайдер собирает MemoryMatch (entry + score + match_type: semantic |
+  substring); ranker применяет порог → sort → limit и возвращает list[MemoryEntry]
+* semantic-кандидаты проходят при score >= memory_similarity_threshold (0.25
+  по умолчанию, Field ge=0.0/le=1.0); substring-кандидаты (точное совпадение
+  на записи без эмбеддинга) порог обходят — политика целиком внутри ranker
+* limit применяется ПОСЛЕ порога и сортировки
+* смена стратегии (recency / dedup / hybrid / MMR) = новый MemoryRanker в
+  контейнере, storage не трогаем
 
 ### Context System
 * ContextLayer (ABC, pipeline-контракт apply)
@@ -93,7 +104,7 @@ LLMProvider.generate()
 ## Следующие направления
 
 ### Memory
-* Memory Ranking / Relevance (similarity threshold / веса — score уже считается)
+* Ranking-стратегии: recency / dedup / hybrid weighting / MMR (новый MemoryRanker)
 * rebuild_embeddings() — reindex при смене embedding-модели или после сбоя
 * Memory Search Query Builder — извлечение search query из мультимодальных сообщений (TextBlock + будущие ImageBlock и др.)
 
@@ -135,21 +146,22 @@ ConversationRepository.load() возвращает mutable-объект.
 
 InMemoryMemoryProvider и SqliteMemoryProvider ищут по substring (LIKE).
 SemanticSqliteMemoryProvider (memory_search_mode=semantic) ищет по cosine —
-запрос вида «расскажи про меня» находит релевантное. Порог отсечения
-(Memory Ranking) пока не введён: semantic возвращает top-k по близости,
-system prompt инструктирует LLM использовать память только если полезна.
+запрос вида «расскажи про меня» находит релевантное. Ranking введён:
+ThresholdMemoryRanker отсекает semantic-кандидатов ниже
+memory_similarity_threshold (0.25 по умолчанию), поэтому нерелевантный шум
+(«столица Франции» → «любит рок») больше не инъектируется.
 
 Semantic — brute-force cosine по всем записям (O(n)). Для персонального
 масштаба достаточно; pgvector / sqlite-vec — при росте объёма.
 
 InMemoryMemoryProvider остаётся для разработки и тестов (memory_backend=memory).
 
-### Memory Context — semantic всегда возвращает top-k
+### Memory Context — порог отсекает шум
 
 При substring MemoryContextLayer не добавляет system-сообщение, если
-совпадений нет. При semantic top-k возвращается почти всегда → память
-инъектируется чаще. Это осознанный компромисс (retrieval без ranking);
-порог/веса появятся в Memory Ranking, где score уже готов.
+совпадений нет. При semantic порог ranker'а отсекает слабые совпадения:
+если ничего не проходит threshold, память не инъектируется. Substring-добор
+(записи без эмбеддинга) порог обходит — точное совпадение считается сигналом.
 
 ### Memory Context Cache (задел, не активен)
 

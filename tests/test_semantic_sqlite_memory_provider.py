@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 from app.core.embedding_provider import EmbeddingProvider
 from app.core.exceptions import EmbeddingError
 from app.memory.semantic_sqlite_memory_provider import SemanticSqliteMemoryProvider
+from app.memory.threshold_memory_ranker import ThresholdMemoryRanker
 from app.models.memory import MemoryEntry
 from app.persistence.database import Base, create_engine
 
@@ -44,12 +45,14 @@ class FakeEmbeddingProvider(EmbeddingProvider):
 async def _make_provider(
     database_url: str,
     embedder: EmbeddingProvider,
+    min_score: float = 0.25,
 ) -> tuple[SemanticSqliteMemoryProvider, AsyncEngine]:
     engine = create_engine(database_url)
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
-    return SemanticSqliteMemoryProvider(session_factory, embedder), engine
+    ranker = ThresholdMemoryRanker(min_score=min_score)
+    return SemanticSqliteMemoryProvider(session_factory, embedder, ranker), engine
 
 
 @pytest_asyncio.fixture
@@ -82,6 +85,19 @@ async def test_semantic_search_finds_memory_without_shared_words(
     results = await provider.search("What is my job?")
 
     assert results[0].content == "I work at an Apple store"
+
+
+async def test_threshold_filters_unrelated_memories(
+    provider: SemanticSqliteMemoryProvider,
+) -> None:
+    # Классический шум: вопрос не про пользователя, но раньше top-k всё равно
+    # тащил в контекст нерелевантные воспоминания.
+    await provider.add(MemoryEntry(id="1", content="I love rock music"))
+    await provider.add(MemoryEntry(id="2", content="My height is 171 cm"))
+
+    results = await provider.search("What is my job?")
+
+    assert results == []
 
 
 async def test_semantic_ranks_by_similarity(

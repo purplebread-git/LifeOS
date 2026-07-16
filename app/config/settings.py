@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 MemoryBackend = Literal["memory", "sqlite"]
@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     # semantic — это режим поиска поверх sqlite-хранилища, а не отдельный backend.
     memory_backend: MemoryBackend = "sqlite"
     memory_search_mode: MemorySearchMode = "substring"
+    # Порог cosine-близости для semantic-ранжирования: кандидаты ниже отсекаются
+    # как шум. Включён по умолчанию; тюнится под embedding-модель через env.
+    memory_similarity_threshold: float = Field(default=0.25, ge=0.0, le=1.0)
 
 
 @lru_cache
