@@ -25,10 +25,11 @@
 - [x] Memory Tool Integration
 - [x] Memory Context Integration
 - [x] Persistent MemoryProvider (SQLite)
+- [x] Semantic Search (SemanticSqliteMemoryProvider + EmbeddingProvider)
 
 ### Next
-- [ ] Semantic Search
-- [ ] Memory Ranking
+- [ ] Memory Ranking (similarity threshold / weighting — score уже считается)
+- [ ] rebuild_embeddings() (reindex при смене модели / после сбоя embeddings)
 - [ ] Memory Search Query Builder
 
 ## Context System

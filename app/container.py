@@ -15,7 +15,7 @@ from app.agent import (
     SimpleAgent,
     ToolConversationEngine,
 )
-from app.config.settings import get_settings
+from app.config.settings import Settings, get_settings
 from app.context import (
     DEFAULT_SYSTEM_PROMPT,
     ConversationHistoryLayer,
@@ -27,17 +27,31 @@ from app.context import (
 from app.conversation.in_memory_repository import InMemoryConversationRepository
 from app.core.plugin import Plugin
 from app.memory.in_memory_provider import InMemoryMemoryProvider
+from app.memory.semantic_sqlite_memory_provider import SemanticSqliteMemoryProvider
 from app.memory.sqlite_memory_provider import SqliteMemoryProvider
 from app.persistence.database import init_database
 from app.plugins.manager import SimplePluginManager
 from app.plugins.registry import SimplePluginRegistry
-from app.providers.openai import OpenAIClient, OpenAIProvider
+from app.providers.openai import OpenAIClient, OpenAIEmbeddingProvider, OpenAIProvider
 from app.tools import RememberTool, SearchMemoryTool
 from app.tools.simple_tool_manager import SimpleToolManager
 
 
 def _unwrap_secret(secret: SecretStr) -> str:
     return secret.get_secret_value()
+
+
+def _memory_provider_key(settings: Settings) -> str:
+    """Выбор провайдера памяти по (backend × search_mode).
+
+    semantic — режим поиска поверх sqlite, а не отдельный backend. Поэтому
+    ключ вычисляется, а Selector остаётся одномерным. memory + semantic пока
+    падает в substring (in-memory semantic вне текущего scope)."""
+    if settings.memory_backend == "memory":
+        return "memory"
+    if settings.memory_search_mode == "semantic":
+        return "semantic_sqlite"
+    return "sqlite"
 
 
 async def _init_plugin_manager(
@@ -85,6 +99,12 @@ class Container(containers.DeclarativeContainer):
         model=config.provided.openai_model,
     )
 
+    embedding_provider = providers.Singleton(
+        OpenAIEmbeddingProvider,
+        client=openai_client,
+        model=config.provided.openai_embedding_model,
+    )
+
     database = providers.Resource(
         init_database,
         database_url=config.provided.database_url,
@@ -97,12 +117,19 @@ class Container(containers.DeclarativeContainer):
         session_factory=database,
     )
 
-    # Provider Pattern: бэкенд памяти выбирается по настройке memory_backend.
-    # Добавление Postgres/Redis/Vector-провайдера не меняет остальной граф.
+    semantic_sqlite_memory_provider = providers.Singleton(
+        SemanticSqliteMemoryProvider,
+        session_factory=database,
+        embedding_provider=embedding_provider,
+    )
+
+    # Provider Pattern: провайдер памяти выбирается по (backend × search_mode).
+    # semantic — режим поиска поверх sqlite, а не отдельный backend.
     memory_provider = providers.Selector(
-        config.provided.memory_backend,
+        providers.Callable(_memory_provider_key, config),
         memory=in_memory_provider,
         sqlite=sqlite_memory_provider,
+        semantic_sqlite=semantic_sqlite_memory_provider,
     )
 
     conversation_repository = providers.Singleton(InMemoryConversationRepository)
