@@ -13,7 +13,9 @@ import pytest_asyncio
 
 from app.config.settings import get_settings
 from app.container import Container
+from app.context import LayeredContextBuilder
 from app.core.agent import Agent
+from app.core.context_builder import ContextBuilder
 from app.core.conversation_engine import ConversationEngine
 from app.core.conversation_repository import ConversationRepository
 from app.core.llm_provider import LLMProvider
@@ -69,6 +71,12 @@ async def test_container_resolves_memory_provider_as_sqlite(container: Container
     provider = await container.memory_provider()
     assert isinstance(provider, SqliteMemoryProvider)
     assert isinstance(provider, MemoryProvider)
+
+
+async def test_container_resolves_context_builder_as_layered(container: Container) -> None:
+    builder = await container.context_builder()  # type: ignore[misc]
+    assert isinstance(builder, LayeredContextBuilder)
+    assert isinstance(builder, ContextBuilder)
 
 
 async def test_container_resolves_llm_provider_as_openai(container: Container) -> None:

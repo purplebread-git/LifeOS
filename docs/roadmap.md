@@ -32,11 +32,14 @@
 - [ ] Memory Search Query Builder
 
 ## Context System
-- [ ] Layered ContextBuilder (System / Memory / Conversation / Knowledge)
+- [x] ContextLayer (pipeline contract)
+- [x] Layered ContextBuilder (System / Memory / Knowledge / Conversation)
 - [ ] Token Budget
 - [ ] Context Trimming
 
 ## Knowledge
+- [x] KnowledgeProvider (ABC, контракт-задел)
+- [ ] KnowledgeContextLayer (реальный поиск)
 - [ ] Knowledge Base
 - [ ] RAG
 - [ ] Embeddings

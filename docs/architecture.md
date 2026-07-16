@@ -24,6 +24,17 @@ LifeOS Agent — Architecture Status
 * Memory Tool Integration (remember / search_memory via ExecutionContext)
 * Memory Context Integration (автоматическая инъекция памяти в LLM-контекст)
 
+### Context System
+* ContextLayer (ABC, pipeline-контракт apply)
+* LayeredContextBuilder — app/context/
+* Слои: SystemPromptLayer, MemoryContextLayer, KnowledgeContextLayer (stub),
+  ConversationHistoryLayer
+* SimpleContextBuilder — reference-реализация (conversation-only)
+
+### Knowledge (контракт-задел)
+* KnowledgeProvider (ABC) — без реализации, DI и использования; зафиксирован
+  контракт, чтобы KnowledgeContextLayer не рефакторить при подключении RAG
+
 ### Persistence
 * app/persistence/ — SQLAlchemy async engine + ORM (MemoryRecord)
 * Domain (app/core/, app/models/) свободен от SQLAlchemy; перевод
@@ -35,7 +46,7 @@ LifeOS Agent — Architecture Status
 
 ⸻
 
-## Текущий поток: Memory Context
+## Текущий поток: Context Pipeline
 
 ```
 User Message
@@ -44,18 +55,26 @@ SimpleAgent.respond()
     ↓
 ToolConversationEngine.run_turn()
     ↓
-SimpleContextBuilder.build()
-    ├── last USER message → MemoryProvider.search()
-    └── [system: memories] + conversation.messages
+LayeredContextBuilder.build()   — pipeline из ContextLayer.apply()
+    ├── SystemPromptLayer        (персона/инструкции)
+    ├── MemoryContextLayer       (last USER message → MemoryProvider.search())
+    ├── KnowledgeContextLayer    (stub: passthrough, задел под RAG)
+    └── ConversationHistoryLayer (копия истории)
     ↓
 LLMProvider.generate()
 ```
+
+Каждый слой — ContextLayer с pipeline-контрактом
+`apply(conversation, context) -> context`. Producer-слои добавляют свои
+сообщения; будущие transformer-слои (Token Budget, Trimming) смогут
+переписать накопленный контекст без слома интерфейса. Порядок и состав
+слоёв задаются в Container.
 
 Два независимых пути к памяти:
 
 | Режим | Путь |
 |-------|------|
-| Автоматический | ContextBuilder → MemoryProvider.search() → system prompt |
+| Автоматический | MemoryContextLayer → MemoryProvider.search() → system prompt |
 | Явный (tools) | LLM → remember / search_memory → ExecutionContext.memory |
 
 ⸻
