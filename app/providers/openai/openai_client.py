@@ -21,6 +21,7 @@ from openai import (
 from openai.types.chat import ChatCompletion
 
 from app.core.exceptions import (
+    EmbeddingError,
     LLMConnectionError,
     LLMError,
     LLMRateLimitError,
@@ -65,3 +66,22 @@ class OpenAIClient:
             raise LLMError(
                 f"OpenAI API returned an error (status {exc.status_code}): {exc.message}"
             ) from exc
+
+    async def embed(self, model: str, texts: list[str]) -> list[list[float]]:
+        """Сгенерировать эмбеддинги для батча текстов.
+
+        Ошибки SDK транслируются в EmbeddingError (а не LLMError): память
+        деградирует по этому исключению отдельно от LLM-слоя."""
+        try:
+            response = await self._client.embeddings.create(
+                model=model,
+                input=texts,
+            )
+            return [item.embedding for item in response.data]
+        except (
+            APITimeoutError,
+            RateLimitError,
+            APIConnectionError,
+            APIStatusError,
+        ) as exc:
+            raise EmbeddingError(f"OpenAI embeddings request failed: {exc}") from exc

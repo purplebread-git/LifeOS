@@ -21,8 +21,18 @@ LifeOS Agent — Architecture Status
 * MemoryProvider (ABC)
 * InMemoryMemoryProvider
 * SqliteMemoryProvider (async SQLAlchemy, память переживает рестарт)
+* SemanticSqliteMemoryProvider (embeddings + cosine поверх sqlite)
+* EmbeddingProvider (ABC) + OpenAIEmbeddingProvider
 * Memory Tool Integration (remember / search_memory via ExecutionContext)
 * Memory Context Integration (автоматическая инъекция памяти в LLM-контекст)
+
+Semantic search:
+* MemoryProvider.search() контракт НЕ менялся — провайдер сам эмбеддит запрос
+* similarity score считается внутри (ranking-ready), наружу — list[MemoryEntry]
+* save-always: запись сохраняется даже при сбое embeddings (embedding = NULL)
+* search: нет эмбеддинга запроса → substring по всем; иначе semantic по
+  записям с эмбеддингом + substring-добор для записей с embedding IS NULL
+* похожесть — brute-force cosine (pgvector / sqlite-vec — будущее)
 
 ### Context System
 * ContextLayer (ABC, pipeline-контракт apply)
@@ -41,8 +51,9 @@ LifeOS Agent — Architecture Status
   MemoryEntry ↔ MemoryRecord живёт в провайдере
 * Схема поднимается через create_all при инициализации engine-ресурса;
   Alembic — отдельный PR, когда появится вторая таблица
-* Выбор бэкенда памяти — providers.Selector по настройке memory_backend
-  (memory | sqlite)
+* Выбор провайдера памяти — providers.Selector по вычисляемому ключу
+  (memory_backend × memory_search_mode). semantic — режим поиска поверх
+  sqlite, а не отдельный backend
 
 ⸻
 
@@ -82,12 +93,11 @@ LLMProvider.generate()
 ## Следующие направления
 
 ### Memory
-* Semantic Search
-* Memory Ranking / Relevance
+* Memory Ranking / Relevance (similarity threshold / веса — score уже считается)
+* rebuild_embeddings() — reindex при смене embedding-модели или после сбоя
 * Memory Search Query Builder — извлечение search query из мультимодальных сообщений (TextBlock + будущие ImageBlock и др.)
 
 ### Context System
-* Layered ContextBuilder: System / Memory / Conversation / Knowledge
 * Token Budget
 * Context Trimming
 
@@ -121,14 +131,25 @@ ConversationRepository.load() возвращает mutable-объект.
 
 При многопоточном доступе потребуется либо immutable-модель, либо механизм блокировок.
 
-### Memory search — substring
+### Memory search — режимы
 
-И InMemoryMemoryProvider, и SqliteMemoryProvider ищут по substring
-(LIKE) без ранжирования и семантики. Запрос вида «расскажи про меня»
-ничего не найдёт. Semantic Search / Ranking — отдельные итерации;
-интерфейс MemoryProvider.search() при этом не меняется.
+InMemoryMemoryProvider и SqliteMemoryProvider ищут по substring (LIKE).
+SemanticSqliteMemoryProvider (memory_search_mode=semantic) ищет по cosine —
+запрос вида «расскажи про меня» находит релевантное. Порог отсечения
+(Memory Ranking) пока не введён: semantic возвращает top-k по близости,
+system prompt инструктирует LLM использовать память только если полезна.
+
+Semantic — brute-force cosine по всем записям (O(n)). Для персонального
+масштаба достаточно; pgvector / sqlite-vec — при росте объёма.
 
 InMemoryMemoryProvider остаётся для разработки и тестов (memory_backend=memory).
+
+### Memory Context — semantic всегда возвращает top-k
+
+При substring MemoryContextLayer не добавляет system-сообщение, если
+совпадений нет. При semantic top-k возвращается почти всегда → память
+инъектируется чаще. Это осознанный компромисс (retrieval без ranking);
+порог/веса появятся в Memory Ranking, где score уже готов.
 
 ### Memory Context Cache (задел, не активен)
 

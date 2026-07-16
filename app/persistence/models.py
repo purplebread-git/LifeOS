@@ -23,3 +23,6 @@ class MemoryRecord(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     memory_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # nullable: запись сохраняется даже если генерация эмбеддинга не удалась
+    # (сбой OpenAI). Поиск деградирует к substring для таких записей.
+    embedding: Mapped[list[float] | None] = mapped_column(JSON, nullable=True, default=None)

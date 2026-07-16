@@ -5,6 +5,7 @@ from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 MemoryBackend = Literal["memory", "sqlite"]
+MemorySearchMode = Literal["substring", "semantic"]
 
 
 class Settings(BaseSettings):
@@ -21,10 +22,14 @@ class Settings(BaseSettings):
 
     openai_api_key: SecretStr = SecretStr("")
     openai_model: str = "gpt-4o-mini"
+    openai_embedding_model: str = "text-embedding-3-small"
     openai_timeout: float = 60.0
 
     database_url: str = "sqlite+aiosqlite:///./lifeos.db"
+    # backend = storage (где хранить), search_mode = как искать.
+    # semantic — это режим поиска поверх sqlite-хранилища, а не отдельный backend.
     memory_backend: MemoryBackend = "sqlite"
+    memory_search_mode: MemorySearchMode = "substring"
 
 
 @lru_cache
