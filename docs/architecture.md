@@ -61,19 +61,25 @@ Memory Ranking (retrieval pipeline):
   честное, переиспользование создало бы ложную связанность
 * InMemoryKnowledgeProvider — substring-поиск, доказывает retrieval pipeline
   (Knowledge → Context → LLM) отдельно от хранения; не переживает рестарт
+* SqliteKnowledgeProvider — persistent substring-хранилище (KnowledgeRecord),
+  переживает рестарт; выбор in-memory / sqlite — providers.Selector по
+  knowledge_backend
+* KnowledgeRecord — отдельная таблица (knowledge); embedding-колонки нет
+  намеренно, semantic — отдельный этап
 * KnowledgeContextLayer активен: ищет по последнему USER-сообщению (как память,
   чтобы не искать по tool-выводам) и инъектирует чанки system-сообщением
-* Persistence, ingestion/chunking, semantic-поиск, ranking — отдельные шаги,
-  по той же траектории, что прошла память
+* Ingestion/chunking, semantic-поиск, ranking — отдельные шаги, по той же
+  траектории, что прошла память
 * MemoryRanker НЕ обобщался в Ranker[T]: один потребитель ranking, обобщение
   ради красоты — преждевременно
 
 ### Persistence
-* app/persistence/ — SQLAlchemy async engine + ORM (MemoryRecord)
+* app/persistence/ — SQLAlchemy async engine + ORM (MemoryRecord, KnowledgeRecord)
 * Domain (app/core/, app/models/) свободен от SQLAlchemy; перевод
-  MemoryEntry ↔ MemoryRecord живёт в провайдере
+  Entry/Chunk ↔ Record живёт в соответствующем провайдере
 * Схема поднимается через create_all при инициализации engine-ресурса;
-  Alembic — отдельный PR, когда появится вторая таблица
+  таблиц теперь две (memories, knowledge) — Alembic станет нужен, когда схема
+  начнёт эволюционировать (миграции существующих данных)
 * Выбор провайдера памяти — providers.Selector по вычисляемому ключу
   (memory_backend × memory_search_mode). semantic — режим поиска поверх
   sqlite, а не отдельный backend
@@ -125,7 +131,6 @@ LLMProvider.generate()
 * Context Trimming
 
 ### Knowledge (RAG)
-* Persistent Knowledge (SQLite)
 * Ingestion / Chunking (парсинг документов, нарезка на чанки)
 * Semantic Knowledge Retrieval (embeddings + cosine)
 * Knowledge Ranking (порог/relevance)

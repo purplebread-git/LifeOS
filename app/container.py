@@ -27,6 +27,7 @@ from app.context import (
 from app.conversation.in_memory_repository import InMemoryConversationRepository
 from app.core.plugin import Plugin
 from app.knowledge.in_memory_knowledge_provider import InMemoryKnowledgeProvider
+from app.knowledge.sqlite_knowledge_provider import SqliteKnowledgeProvider
 from app.memory.in_memory_provider import InMemoryMemoryProvider
 from app.memory.semantic_sqlite_memory_provider import SemanticSqliteMemoryProvider
 from app.memory.sqlite_memory_provider import SqliteMemoryProvider
@@ -143,10 +144,20 @@ class Container(containers.DeclarativeContainer):
         semantic_sqlite=semantic_sqlite_memory_provider,
     )
 
-    # Knowledge (RAG-задел): in-memory substring-провайдер. Доказывает
-    # retrieval pipeline (Knowledge → Context → LLM) отдельно от хранения;
-    # persistence/semantic — отдельные шаги, как это было с памятью.
-    knowledge_provider = providers.Singleton(InMemoryKnowledgeProvider)
+    # Knowledge (RAG): выбор хранилища по knowledge_backend. semantic/ranking —
+    # отдельные этапы, как это было с памятью.
+    in_memory_knowledge_provider = providers.Singleton(InMemoryKnowledgeProvider)
+
+    sqlite_knowledge_provider = providers.Singleton(
+        SqliteKnowledgeProvider,
+        session_factory=database,
+    )
+
+    knowledge_provider = providers.Selector(
+        config.provided.knowledge_backend,
+        memory=in_memory_knowledge_provider,
+        sqlite=sqlite_knowledge_provider,
+    )
 
     conversation_repository = providers.Singleton(InMemoryConversationRepository)
 

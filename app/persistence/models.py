@@ -1,8 +1,13 @@
 """ORM-модели. Отдельны от доменных pydantic-моделей: домен остаётся
 свободным от SQLAlchemy, провайдер отвечает за перевод одного в другое.
 
-Имя столбца для произвольных атрибутов — memory_metadata, а НЕ metadata:
+Имя столбца для произвольных атрибутов — *_metadata, а НЕ metadata:
 имя `metadata` зарезервировано SQLAlchemy (Base.metadata).
+
+Memory и Knowledge — разные таблицы и разные доменные сущности; общей ORM
+базы у них нет намеренно (см. app/models/knowledge.py). С появлением второй
+таблицы create_all остаётся достаточным; Alembic — когда схема начнёт
+эволюционировать.
 """
 
 from __future__ import annotations
@@ -26,3 +31,14 @@ class MemoryRecord(Base):
     # nullable: запись сохраняется даже если генерация эмбеддинга не удалась
     # (сбой OpenAI). Поиск деградирует к substring для таких записей.
     embedding: Mapped[list[float] | None] = mapped_column(JSON, nullable=True, default=None)
+
+
+class KnowledgeRecord(Base):
+    __tablename__ = "knowledge"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    source: Mapped[str] = mapped_column(String, nullable=False)
+    knowledge_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    # embedding-колонки нет намеренно: semantic-поиск — отдельный этап, тут
+    # только persistent substring-хранилище.
