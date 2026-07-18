@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 from app.core.embedding_provider import EmbeddingProvider
 from app.core.exceptions import EmbeddingError
 from app.knowledge.semantic_sqlite_knowledge_provider import SemanticSqliteKnowledgeProvider
+from app.knowledge.threshold_knowledge_ranker import ThresholdKnowledgeRanker
 from app.models.knowledge import KnowledgeChunk
 from app.persistence.database import Base, create_engine
 
@@ -43,12 +44,14 @@ class FakeEmbeddingProvider(EmbeddingProvider):
 async def _make_provider(
     database_url: str,
     embedder: EmbeddingProvider,
+    min_score: float = 0.25,
 ) -> tuple[SemanticSqliteKnowledgeProvider, AsyncEngine]:
     engine = create_engine(database_url)
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
-    return SemanticSqliteKnowledgeProvider(session_factory, embedder), engine
+    ranker = ThresholdKnowledgeRanker(min_score=min_score)
+    return SemanticSqliteKnowledgeProvider(session_factory, embedder, ranker), engine
 
 
 @pytest_asyncio.fixture
@@ -83,6 +86,18 @@ async def test_semantic_search_finds_chunk_without_shared_words(
     results = await provider.search("Where is France located?")
 
     assert results[0].content == "Paris is the capital"
+
+
+async def test_threshold_filters_unrelated_chunks(
+    provider: SemanticSqliteKnowledgeProvider,
+) -> None:
+    # Шум: вопрос про географию, но раньше top-k тащил и нерелевантные чанки.
+    await provider.add(KnowledgeChunk(id="1", content="Python is a language", source="wiki"))
+    await provider.add(KnowledgeChunk(id="2", content="The moon orbits Earth", source="space"))
+
+    results = await provider.search("Where is France located?")
+
+    assert results == []
 
 
 async def test_semantic_ranks_by_similarity(

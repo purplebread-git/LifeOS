@@ -29,6 +29,7 @@ from app.core.plugin import Plugin
 from app.knowledge.in_memory_knowledge_provider import InMemoryKnowledgeProvider
 from app.knowledge.semantic_sqlite_knowledge_provider import SemanticSqliteKnowledgeProvider
 from app.knowledge.sqlite_knowledge_provider import SqliteKnowledgeProvider
+from app.knowledge.threshold_knowledge_ranker import ThresholdKnowledgeRanker
 from app.memory.in_memory_provider import InMemoryMemoryProvider
 from app.memory.semantic_sqlite_memory_provider import SemanticSqliteMemoryProvider
 from app.memory.sqlite_memory_provider import SqliteMemoryProvider
@@ -158,7 +159,8 @@ class Container(containers.DeclarativeContainer):
 
     # Knowledge (RAG): провайдер знаний выбирается по (backend × search_mode),
     # симметрично памяти. semantic — режим поиска поверх sqlite. Ranking —
-    # отдельный этап (#17).
+    # отдельная инъектируемая стратегия (зеркало memory_ranker), память не
+    # затрагивает: подсистемы эволюционируют независимо.
     in_memory_knowledge_provider = providers.Singleton(InMemoryKnowledgeProvider)
 
     sqlite_knowledge_provider = providers.Singleton(
@@ -166,10 +168,16 @@ class Container(containers.DeclarativeContainer):
         session_factory=database,
     )
 
+    knowledge_ranker = providers.Singleton(
+        ThresholdKnowledgeRanker,
+        min_score=config.provided.knowledge_similarity_threshold,
+    )
+
     semantic_sqlite_knowledge_provider = providers.Singleton(
         SemanticSqliteKnowledgeProvider,
         session_factory=database,
         embedding_provider=embedding_provider,
+        ranker=knowledge_ranker,
     )
 
     knowledge_provider = providers.Selector(

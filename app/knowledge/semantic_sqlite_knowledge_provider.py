@@ -11,9 +11,10 @@
     substring; иначе semantic по чанкам с эмбеддингом + substring-добор для
     чанков с embedding IS NULL.
 
-Ranking (порог/веса) здесь НЕ вводится — это отдельный этап (#17), как это
-было у памяти (semantic → затем ranker). Наружу отдаётся list[KnowledgeChunk],
-отсортированный по близости.
+Similarity score считается внутри (KnowledgeMatch), а политику отбора —
+порог, сортировку, лимит — применяет инъектируемый KnowledgeRanker
+(симметрично памяти). Контракт KnowledgeProvider.search() не меняется:
+наружу отдаётся list[KnowledgeChunk].
 """
 
 from __future__ import annotations
@@ -24,9 +25,14 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.core.embedding_provider import EmbeddingProvider
 from app.core.exceptions import EmbeddingError
 from app.core.knowledge_provider import KnowledgeProvider
-from app.models.knowledge import KnowledgeChunk
+from app.core.knowledge_ranker import KnowledgeRanker
+from app.models.knowledge import KnowledgeChunk, KnowledgeMatch
 from app.persistence.models import KnowledgeRecord
 from app.utils.similarity import cosine_similarity
+
+# Score-заглушка для substring-кандидатов (без эмбеддинга): семантический порог
+# к ним не применяется, поэтому конкретное значение на ранжирование не влияет.
+_SUBSTRING_FALLBACK_SCORE = 0.0
 
 
 class SemanticSqliteKnowledgeProvider(KnowledgeProvider):
@@ -34,9 +40,11 @@ class SemanticSqliteKnowledgeProvider(KnowledgeProvider):
         self,
         session_factory: async_sessionmaker[AsyncSession],
         embedding_provider: EmbeddingProvider,
+        ranker: KnowledgeRanker,
     ) -> None:
         self._session_factory = session_factory
         self._embedding_provider = embedding_provider
+        self._ranker = ranker
 
     async def add(self, chunk: KnowledgeChunk) -> None:
         embedding = await self._safe_embed(chunk.content)
@@ -52,6 +60,14 @@ class SemanticSqliteKnowledgeProvider(KnowledgeProvider):
             await session.commit()
 
     async def search(self, query: str, limit: int = 5) -> list[KnowledgeChunk]:
+        matches = await self._collect_matches(query)
+        return self._ranker.rank(matches, limit)
+
+    async def _collect_matches(self, query: str) -> list[KnowledgeMatch]:
+        """Собирает кандидатов со score и типом совпадения — без политики отбора.
+
+        Порог/сортировку/лимит применяет ranker; провайдер лишь считает score.
+        """
         query_vec = await self._safe_embed(query)
 
         async with self._session_factory() as session:
@@ -59,21 +75,32 @@ class SemanticSqliteKnowledgeProvider(KnowledgeProvider):
 
         if query_vec is None:
             # Полная деградация: эмбеддинг запроса недоступен → substring по всем.
-            fallback = [r for r in records if query.lower() in r.content.lower()]
-            return [_to_chunk(r) for r in fallback[:limit]]
+            return [
+                KnowledgeMatch(
+                    chunk=_to_chunk(record),
+                    score=_SUBSTRING_FALLBACK_SCORE,
+                    match_type="substring",
+                )
+                for record in records
+                if query.lower() in record.content.lower()
+            ]
 
-        scored: list[tuple[KnowledgeRecord, float]] = []
-        substring_fallback: list[KnowledgeRecord] = []
+        matches: list[KnowledgeMatch] = []
         for record in records:
             if record.embedding:
                 score = cosine_similarity(query_vec, record.embedding)
-                scored.append((record, score))
+                matches.append(
+                    KnowledgeMatch(chunk=_to_chunk(record), score=score, match_type="semantic")
+                )
             elif query.lower() in record.content.lower():
-                substring_fallback.append(record)
-
-        scored.sort(key=lambda pair: pair[1], reverse=True)
-        ordered = [record for record, _ in scored] + substring_fallback
-        return [_to_chunk(record) for record in ordered[:limit]]
+                matches.append(
+                    KnowledgeMatch(
+                        chunk=_to_chunk(record),
+                        score=_SUBSTRING_FALLBACK_SCORE,
+                        match_type="substring",
+                    )
+                )
+        return matches
 
     async def _safe_embed(self, text: str) -> list[float] | None:
         try:

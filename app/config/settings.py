@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     # режим поиска. semantic — режим поверх sqlite-хранилища, как у памяти.
     knowledge_backend: KnowledgeBackend = "sqlite"
     knowledge_search_mode: KnowledgeSearchMode = "substring"
+    # Порог cosine-близости для semantic-ранжирования знаний. Тот же дефолт, что
+    # у памяти: одна embedding-модель, одна метрика, одна задача — отсечь шум.
+    knowledge_similarity_threshold: float = Field(default=0.25, ge=0.0, le=1.0)
 
 
 @lru_cache

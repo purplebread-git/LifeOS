@@ -65,18 +65,26 @@ Memory Ranking (retrieval pipeline):
   переживает рестарт
 * SemanticSqliteKnowledgeProvider — semantic-поиск по cosine поверх sqlite;
   save-always (чанк сохраняется даже при сбое embeddings, embedding = NULL) +
-  substring-добор для NULL-эмбеддингов; ranker пока НЕ вводится (ranking — #17)
+  substring-добор для NULL-эмбеддингов; политику отбора применяет ranker
+* Knowledge Ranking (зеркало memory): KnowledgeRanker (ABC) +
+  ThresholdKnowledgeRanker; провайдер собирает KnowledgeMatch (chunk + score +
+  match_type), ranker применяет порог (knowledge_similarity_threshold=0.25) →
+  sort → append substring → limit. Наружу — list[KnowledgeChunk], контракт
+  KnowledgeProvider.search() неизменен. threshold/min_score НЕ в сигнатуре
+  rank() — следующий ранкер (MMR/recency/citation) не меняет интерфейс
 * выбор провайдера знаний — providers.Selector по вычисляемому ключу
   (knowledge_backend × knowledge_search_mode), симметрично памяти
 * KnowledgeRecord — отдельная таблица (knowledge) с nullable embedding-колонкой
 * KnowledgeContextLayer активен: ищет по последнему USER-сообщению (как память,
   чтобы не искать по tool-выводам) и инъектирует чанки system-сообщением
-* Ingestion/chunking, knowledge ranking — отдельные шаги, по той же
-  траектории, что прошла память
+* Ingestion/chunking — отдельный шаг, по той же траектории, что прошла память
 * Структурная симметрия Memory/Knowledge выдержана намеренно (Sqlite* и
-  SemanticSqlite* провайдеры в обеих подсистемах), даже ценой похожего кода —
-  дерево проекта самодокументирует эволюцию обеих подсистем
-* MemoryRanker НЕ обобщался в Ranker[T]: обобщение ради красоты преждевременно
+  SemanticSqlite* провайдеры, *Ranker + *Match + MatchType в обеих подсистемах),
+  даже ценой похожего кода — дерево проекта самодокументирует эволюцию
+* Ranker НЕ обобщён в Ranker[T]: потребителей ranking два (memory, knowledge),
+  порог genericization — третий независимый потребитель. MemoryMatch.entry vs
+  KnowledgeMatch.chunk и продублированный MatchType — честная независимость;
+  обобщение отложено до появления устойчивой общей модели
 * cosine_similarity вынесена в app/utils/ (чистая математика, не доменный
   контракт → не в core); переиспользуется памятью и знаниями без связывания
   подсистем друг с другом
@@ -139,8 +147,8 @@ LLMProvider.generate()
 * Context Trimming
 
 ### Knowledge (RAG)
-* Knowledge Ranking (порог/relevance — новый KnowledgeRanker)
 * Ingestion / Chunking (парсинг документов, нарезка на чанки)
+* Ranking-стратегии: recency / MMR / citation weight / source priority
 
 ### Platform
 * Plugins (реальные интеграции)

@@ -48,10 +48,11 @@
 - [x] KnowledgeContextLayer (активен: Knowledge → Context → LLM)
 - [x] Persistent Knowledge (SqliteKnowledgeProvider + KnowledgeRecord)
 - [x] Semantic Knowledge Retrieval (SemanticSqliteKnowledgeProvider, embeddings + cosine)
+- [x] Knowledge Ranking (KnowledgeRanker + ThresholdKnowledgeRanker, similarity threshold)
 
 ### Next
-- [ ] Knowledge Ranking (порог/relevance — как у памяти)
 - [ ] Ingestion / Chunking (парсинг документов, нарезка)
+- [ ] Ranking-стратегии: recency / MMR / citation weight / source priority
 - 
 ## Platform
 - [ ] Plugins
