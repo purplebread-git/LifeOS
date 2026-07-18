@@ -1,4 +1,4 @@
-from app.memory.similarity import cosine_similarity
+from app.utils.similarity import cosine_similarity
 
 
 def test_identical_vectors() -> None:

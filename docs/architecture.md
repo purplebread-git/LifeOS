@@ -62,16 +62,24 @@ Memory Ranking (retrieval pipeline):
 * InMemoryKnowledgeProvider — substring-поиск, доказывает retrieval pipeline
   (Knowledge → Context → LLM) отдельно от хранения; не переживает рестарт
 * SqliteKnowledgeProvider — persistent substring-хранилище (KnowledgeRecord),
-  переживает рестарт; выбор in-memory / sqlite — providers.Selector по
-  knowledge_backend
-* KnowledgeRecord — отдельная таблица (knowledge); embedding-колонки нет
-  намеренно, semantic — отдельный этап
+  переживает рестарт
+* SemanticSqliteKnowledgeProvider — semantic-поиск по cosine поверх sqlite;
+  save-always (чанк сохраняется даже при сбое embeddings, embedding = NULL) +
+  substring-добор для NULL-эмбеддингов; ranker пока НЕ вводится (ranking — #17)
+* выбор провайдера знаний — providers.Selector по вычисляемому ключу
+  (knowledge_backend × knowledge_search_mode), симметрично памяти
+* KnowledgeRecord — отдельная таблица (knowledge) с nullable embedding-колонкой
 * KnowledgeContextLayer активен: ищет по последнему USER-сообщению (как память,
   чтобы не искать по tool-выводам) и инъектирует чанки system-сообщением
-* Ingestion/chunking, semantic-поиск, ranking — отдельные шаги, по той же
+* Ingestion/chunking, knowledge ranking — отдельные шаги, по той же
   траектории, что прошла память
-* MemoryRanker НЕ обобщался в Ranker[T]: один потребитель ranking, обобщение
-  ради красоты — преждевременно
+* Структурная симметрия Memory/Knowledge выдержана намеренно (Sqlite* и
+  SemanticSqlite* провайдеры в обеих подсистемах), даже ценой похожего кода —
+  дерево проекта самодокументирует эволюцию обеих подсистем
+* MemoryRanker НЕ обобщался в Ranker[T]: обобщение ради красоты преждевременно
+* cosine_similarity вынесена в app/utils/ (чистая математика, не доменный
+  контракт → не в core); переиспользуется памятью и знаниями без связывания
+  подсистем друг с другом
 
 ### Persistence
 * app/persistence/ — SQLAlchemy async engine + ORM (MemoryRecord, KnowledgeRecord)
@@ -131,9 +139,8 @@ LLMProvider.generate()
 * Context Trimming
 
 ### Knowledge (RAG)
+* Knowledge Ranking (порог/relevance — новый KnowledgeRanker)
 * Ingestion / Chunking (парсинг документов, нарезка на чанки)
-* Semantic Knowledge Retrieval (embeddings + cosine)
-* Knowledge Ranking (порог/relevance)
 
 ### Platform
 * Plugins (реальные интеграции)

@@ -47,11 +47,11 @@
 - [x] InMemoryKnowledgeProvider (substring, retrieval MVP)
 - [x] KnowledgeContextLayer (активен: Knowledge → Context → LLM)
 - [x] Persistent Knowledge (SqliteKnowledgeProvider + KnowledgeRecord)
+- [x] Semantic Knowledge Retrieval (SemanticSqliteKnowledgeProvider, embeddings + cosine)
 
 ### Next
+- [ ] Knowledge Ranking (порог/relevance — как у памяти)
 - [ ] Ingestion / Chunking (парсинг документов, нарезка)
-- [ ] Semantic Knowledge Retrieval (embeddings + cosine)
-- [ ] Knowledge Ranking (порог/relevance)
 - 
 ## Platform
 - [ ] Plugins

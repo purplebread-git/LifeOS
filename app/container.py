@@ -27,6 +27,7 @@ from app.context import (
 from app.conversation.in_memory_repository import InMemoryConversationRepository
 from app.core.plugin import Plugin
 from app.knowledge.in_memory_knowledge_provider import InMemoryKnowledgeProvider
+from app.knowledge.semantic_sqlite_knowledge_provider import SemanticSqliteKnowledgeProvider
 from app.knowledge.sqlite_knowledge_provider import SqliteKnowledgeProvider
 from app.memory.in_memory_provider import InMemoryMemoryProvider
 from app.memory.semantic_sqlite_memory_provider import SemanticSqliteMemoryProvider
@@ -53,6 +54,17 @@ def _memory_provider_key(settings: Settings) -> str:
     if settings.memory_backend == "memory":
         return "memory"
     if settings.memory_search_mode == "semantic":
+        return "semantic_sqlite"
+    return "sqlite"
+
+
+def _knowledge_provider_key(settings: Settings) -> str:
+    """Выбор провайдера знаний по (backend × search_mode). Симметрично памяти:
+    semantic — режим поиска поверх sqlite, а не отдельный backend. memory +
+    semantic пока падает в substring (in-memory semantic вне текущего scope)."""
+    if settings.knowledge_backend == "memory":
+        return "memory"
+    if settings.knowledge_search_mode == "semantic":
         return "semantic_sqlite"
     return "sqlite"
 
@@ -144,8 +156,9 @@ class Container(containers.DeclarativeContainer):
         semantic_sqlite=semantic_sqlite_memory_provider,
     )
 
-    # Knowledge (RAG): выбор хранилища по knowledge_backend. semantic/ranking —
-    # отдельные этапы, как это было с памятью.
+    # Knowledge (RAG): провайдер знаний выбирается по (backend × search_mode),
+    # симметрично памяти. semantic — режим поиска поверх sqlite. Ranking —
+    # отдельный этап (#17).
     in_memory_knowledge_provider = providers.Singleton(InMemoryKnowledgeProvider)
 
     sqlite_knowledge_provider = providers.Singleton(
@@ -153,10 +166,17 @@ class Container(containers.DeclarativeContainer):
         session_factory=database,
     )
 
+    semantic_sqlite_knowledge_provider = providers.Singleton(
+        SemanticSqliteKnowledgeProvider,
+        session_factory=database,
+        embedding_provider=embedding_provider,
+    )
+
     knowledge_provider = providers.Selector(
-        config.provided.knowledge_backend,
+        providers.Callable(_knowledge_provider_key, config),
         memory=in_memory_knowledge_provider,
         sqlite=sqlite_knowledge_provider,
+        semantic_sqlite=semantic_sqlite_knowledge_provider,
     )
 
     conversation_repository = providers.Singleton(InMemoryConversationRepository)
