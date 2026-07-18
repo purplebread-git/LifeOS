@@ -22,7 +22,7 @@ from app.core.knowledge_provider import KnowledgeProvider
 from app.core.llm_provider import LLMProvider
 from app.core.memory_provider import MemoryProvider
 from app.core.plugin_registry import PluginRegistry
-from app.knowledge.in_memory_knowledge_provider import InMemoryKnowledgeProvider
+from app.knowledge.sqlite_knowledge_provider import SqliteKnowledgeProvider
 from app.memory.sqlite_memory_provider import SqliteMemoryProvider
 from app.providers.openai import OpenAIProvider
 
@@ -75,9 +75,9 @@ async def test_container_resolves_memory_provider_as_sqlite(container: Container
     assert isinstance(provider, MemoryProvider)
 
 
-async def test_container_resolves_knowledge_provider(container: Container) -> None:
-    provider = container.knowledge_provider()
-    assert isinstance(provider, InMemoryKnowledgeProvider)
+async def test_container_resolves_knowledge_provider_as_sqlite(container: Container) -> None:
+    provider = await container.knowledge_provider()
+    assert isinstance(provider, SqliteKnowledgeProvider)
     assert isinstance(provider, KnowledgeProvider)
 
 

@@ -6,6 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 MemoryBackend = Literal["memory", "sqlite"]
 MemorySearchMode = Literal["substring", "semantic"]
+KnowledgeBackend = Literal["memory", "sqlite"]
 
 
 class Settings(BaseSettings):
@@ -33,6 +34,10 @@ class Settings(BaseSettings):
     # Порог cosine-близости для semantic-ранжирования: кандидаты ниже отсекаются
     # как шум. Включён по умолчанию; тюнится под embedding-модель через env.
     memory_similarity_threshold: float = Field(default=0.25, ge=0.0, le=1.0)
+
+    # storage знаний. semantic-поиск/ranking — отдельные этапы, здесь только выбор
+    # хранилища (in-memory для разработки/тестов, sqlite — persistent).
+    knowledge_backend: KnowledgeBackend = "sqlite"
 
 
 @lru_cache

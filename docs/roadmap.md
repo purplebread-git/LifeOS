@@ -46,9 +46,9 @@
 - [x] KnowledgeChunk (доменная модель, отдельная от MemoryEntry)
 - [x] InMemoryKnowledgeProvider (substring, retrieval MVP)
 - [x] KnowledgeContextLayer (активен: Knowledge → Context → LLM)
+- [x] Persistent Knowledge (SqliteKnowledgeProvider + KnowledgeRecord)
 
 ### Next
-- [ ] Persistent Knowledge (SQLite)
 - [ ] Ingestion / Chunking (парсинг документов, нарезка)
 - [ ] Semantic Knowledge Retrieval (embeddings + cosine)
 - [ ] Knowledge Ranking (порог/relevance)
