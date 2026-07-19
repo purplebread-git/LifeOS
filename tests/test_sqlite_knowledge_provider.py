@@ -93,6 +93,42 @@ async def test_add_same_id_overwrites(provider: SqliteKnowledgeProvider) -> None
     assert results[0].content == "new content"
 
 
+async def test_list_sources_unique_and_sorted(provider: SqliteKnowledgeProvider) -> None:
+    await provider.add_batch(
+        [
+            KnowledgeChunk(id="1", content="a", source="zeta"),
+            KnowledgeChunk(id="2", content="b", source="alpha"),
+            KnowledgeChunk(id="3", content="c", source="alpha"),
+        ]
+    )
+
+    assert await provider.list_sources() == ["alpha", "zeta"]
+
+
+async def test_delete_source_removes_only_its_chunks(provider: SqliteKnowledgeProvider) -> None:
+    await provider.add_batch(
+        [
+            KnowledgeChunk(id="1", content="alpha one", source="a"),
+            KnowledgeChunk(id="2", content="alpha two", source="a"),
+            KnowledgeChunk(id="3", content="alpha three", source="b"),
+        ]
+    )
+
+    deleted = await provider.delete_source("a")
+
+    assert deleted == 2
+    assert await provider.list_sources() == ["b"]
+    assert len(await provider.search("alpha")) == 1
+
+
+async def test_delete_source_is_idempotent(provider: SqliteKnowledgeProvider) -> None:
+    await provider.add(KnowledgeChunk(id="1", content="x", source="a"))
+
+    assert await provider.delete_source("missing") == 0
+    assert await provider.delete_source("a") == 1
+    assert await provider.delete_source("a") == 0
+
+
 async def test_knowledge_survives_engine_restart(tmp_path: Path) -> None:
     # Acceptance-тест PR: add → restart → search → knowledge survives.
     database_url = f"sqlite+aiosqlite:///{tmp_path}/knowledge.db"

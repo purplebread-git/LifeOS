@@ -26,3 +26,12 @@ class InMemoryKnowledgeProvider(KnowledgeProvider):
     async def search(self, query: str, limit: int = 5) -> list[KnowledgeChunk]:
         matches = [c for c in self._storage.values() if query.lower() in c.content.lower()]
         return matches[:limit]
+
+    async def list_sources(self) -> list[str]:
+        return sorted({chunk.source for chunk in self._storage.values()})
+
+    async def delete_source(self, source: str) -> int:
+        ids = [cid for cid, chunk in self._storage.items() if chunk.source == source]
+        for cid in ids:
+            del self._storage[cid]
+        return len(ids)

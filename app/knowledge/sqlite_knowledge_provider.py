@@ -7,7 +7,9 @@ ranking — отдельные итерации, интерфейс KnowledgePro
 
 from __future__ import annotations
 
-from sqlalchemy import func, select
+from typing import Any, cast
+
+from sqlalchemy import CursorResult, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.knowledge_provider import KnowledgeProvider
@@ -40,6 +42,23 @@ class SqliteKnowledgeProvider(KnowledgeProvider):
             )
             result = await session.execute(statement)
             return [_to_chunk(record) for record in result.scalars().all()]
+
+    async def list_sources(self) -> list[str]:
+        async with self._session_factory() as session:
+            statement = (
+                select(KnowledgeRecord.source)
+                .distinct()
+                .order_by(KnowledgeRecord.source)
+            )
+            result = await session.execute(statement)
+            return list(result.scalars().all())
+
+    async def delete_source(self, source: str) -> int:
+        async with self._session_factory() as session:
+            statement = delete(KnowledgeRecord).where(KnowledgeRecord.source == source)
+            result = cast(CursorResult[Any], await session.execute(statement))
+            await session.commit()
+            return result.rowcount
 
 
 def _to_record(chunk: KnowledgeChunk) -> KnowledgeRecord:

@@ -19,7 +19,9 @@ Similarity score считается внутри (KnowledgeMatch), а полит
 
 from __future__ import annotations
 
-from sqlalchemy import select
+from typing import Any, cast
+
+from sqlalchemy import CursorResult, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.embedding_provider import EmbeddingProvider
@@ -62,6 +64,23 @@ class SemanticSqliteKnowledgeProvider(KnowledgeProvider):
     async def search(self, query: str, limit: int = 5) -> list[KnowledgeChunk]:
         matches = await self._collect_matches(query)
         return self._ranker.rank(matches, limit)
+
+    async def list_sources(self) -> list[str]:
+        async with self._session_factory() as session:
+            statement = (
+                select(KnowledgeRecord.source)
+                .distinct()
+                .order_by(KnowledgeRecord.source)
+            )
+            result = await session.execute(statement)
+            return list(result.scalars().all())
+
+    async def delete_source(self, source: str) -> int:
+        async with self._session_factory() as session:
+            statement = delete(KnowledgeRecord).where(KnowledgeRecord.source == source)
+            result = cast(CursorResult[Any], await session.execute(statement))
+            await session.commit()
+            return result.rowcount
 
     async def _collect_matches(self, query: str) -> list[KnowledgeMatch]:
         """Собирает кандидатов со score и типом совпадения — без политики отбора.
