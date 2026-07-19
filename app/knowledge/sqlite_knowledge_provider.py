@@ -45,11 +45,7 @@ class SqliteKnowledgeProvider(KnowledgeProvider):
 
     async def list_sources(self) -> list[str]:
         async with self._session_factory() as session:
-            statement = (
-                select(KnowledgeRecord.source)
-                .distinct()
-                .order_by(KnowledgeRecord.source)
-            )
+            statement = select(KnowledgeRecord.source).distinct().order_by(KnowledgeRecord.source)
             result = await session.execute(statement)
             return list(result.scalars().all())
 
