@@ -83,9 +83,13 @@ Memory Ranking (retrieval pipeline):
   len(content) <= chunk_size ВСЕГДА (слово длиннее размера режется жёстко),
   overlap по границам слов. id чанка = sha256(source + content) —
   детерминирован и устойчив к сдвигам содержимого (в отличие от source#index)
-* Document Ingestion (extractors формата → text → Chunker → add_batch) —
-  отдельный шаг #19; единый контракт извлечения (DocumentExtractor) вводится
-  тогда же, чтобы новые форматы добавлялись адаптером, а не правкой пайплайна
+* Document Ingestion: DocumentExtractor (ABC, async extract(content: bytes) → str)
+  + PlainTextExtractor (utf-8) + DocumentIngestionService (тонкая оркестрация:
+  extract → strip → пусто→[] → split → add_batch → return list[KnowledgeChunk]).
+  Сервис НЕ знает про формат (весь format-роутинг — внутри extractor) и не несёт
+  логики сверх оркестрации (ни логов, ни retries, ни dedup) — новый формат =
+  новый DocumentExtractor, пайплайн не меняется. chunker в DI с дефолтами
+  (settings chunk_size/overlap появятся с UI/CLI-потребителем)
 * Структурная симметрия Memory/Knowledge выдержана намеренно (Sqlite* и
   SemanticSqlite* провайдеры, *Ranker + *Match + MatchType в обеих подсистемах),
   даже ценой похожего кода — дерево проекта самодокументирует эволюцию
@@ -155,7 +159,8 @@ LLMProvider.generate()
 * Context Trimming
 
 ### Knowledge (RAG)
-* Document Ingestion (extractors TXT/MD/PDF → text → Chunker → add_batch)
+* Extractors: Markdown / PDF / DOCX / HTML / RemoteUrl (адаптер за DocumentExtractor)
+* Knowledge Management Tools (agent-facing ingest/list/delete)
 * Chunking-стратегии: sentence / paragraph / recursive / token / semantic
 * Ranking-стратегии: recency / MMR / citation weight / source priority
 

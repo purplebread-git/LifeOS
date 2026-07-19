@@ -50,9 +50,11 @@
 - [x] Semantic Knowledge Retrieval (SemanticSqliteKnowledgeProvider, embeddings + cosine)
 - [x] Knowledge Ranking (KnowledgeRanker + ThresholdKnowledgeRanker, similarity threshold)
 - [x] Chunking Engine (Chunker ABC + FixedSizeChunker, text → KnowledgeChunk[])
+- [x] Document Ingestion (DocumentExtractor ABC + PlainTextExtractor + DocumentIngestionService)
 
 ### Next
-- [ ] Document Ingestion (extractors: TXT/MD/PDF → text → Chunker → add_batch)
+- [ ] Extractors: Markdown / PDF / DOCX / HTML / RemoteUrl (новый адаптер за контрактом)
+- [ ] Knowledge Management Tools (agent-facing ingest/list/delete)
 - [ ] Chunking-стратегии: sentence / paragraph / recursive / token / semantic
 - [ ] Ranking-стратегии: recency / MMR / citation weight / source priority
 - 
