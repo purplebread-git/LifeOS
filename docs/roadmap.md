@@ -49,13 +49,15 @@
 - [x] Document Ingestion (DocumentExtractor ABC + PlainTextExtractor + DocumentIngestionService)
 - [x] Knowledge Source Management (list_sources / delete_source — доменная модель вокруг source завершена)
 - [x] Extractor Routing (ExtractorRegistry: extension → extractor, default PlainText; сервис-инвариант)
+- [x] MarkdownExtractor (markdown-it-py + собственный обход токенов, .md/.markdown) — доказательство горизонтального расширения
 
 ## Capabilities
 Возможности агента, открытые через инструменты (Tool → Capability).
 - [x] Memory Tools (RememberTool, SearchMemoryTool)
 - [x] Knowledge Tools (IngestDocumentTool, SearchKnowledgeTool) — Knowledge MVP замкнут
 - [x] Knowledge Source Tools (ListSourcesTool, DeleteSourceTool)
-- [ ] Additional Extractors (Markdown / PDF / DOCX / HTML / RemoteUrl — чистый адаптер + запись в реестре)
+- [x] MarkdownExtractor (.md / .markdown) — подключён чистым адаптером + записью в реестре
+- [ ] Additional Extractors (PDF / DOCX / HTML / RemoteUrl — чистый адаптер + запись в реестре)
 
 ### Extensions (расширения поверх готового ядра, не обязательные этапы)
 - [ ] Memory: Recency / Hybrid / MMR / LLM Reranker; Maintenance (rebuild_embeddings, dedup)
