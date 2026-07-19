@@ -28,9 +28,9 @@ from app.core.embedding_provider import EmbeddingProvider
 from app.core.exceptions import EmbeddingError
 from app.core.memory_provider import MemoryProvider
 from app.core.memory_ranker import MemoryRanker
-from app.memory.similarity import cosine_similarity
 from app.models.memory import MemoryEntry, MemoryMatch
 from app.persistence.models import MemoryRecord
+from app.utils.similarity import cosine_similarity
 
 # Score-заглушка для substring-кандидатов (без эмбеддинга): семантический порог
 # к ним не применяется, поэтому конкретное значение на ранжирование не влияет.

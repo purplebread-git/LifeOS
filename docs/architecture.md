@@ -62,16 +62,32 @@ Memory Ranking (retrieval pipeline):
 * InMemoryKnowledgeProvider — substring-поиск, доказывает retrieval pipeline
   (Knowledge → Context → LLM) отдельно от хранения; не переживает рестарт
 * SqliteKnowledgeProvider — persistent substring-хранилище (KnowledgeRecord),
-  переживает рестарт; выбор in-memory / sqlite — providers.Selector по
-  knowledge_backend
-* KnowledgeRecord — отдельная таблица (knowledge); embedding-колонки нет
-  намеренно, semantic — отдельный этап
+  переживает рестарт
+* SemanticSqliteKnowledgeProvider — semantic-поиск по cosine поверх sqlite;
+  save-always (чанк сохраняется даже при сбое embeddings, embedding = NULL) +
+  substring-добор для NULL-эмбеддингов; политику отбора применяет ranker
+* Knowledge Ranking (зеркало memory): KnowledgeRanker (ABC) +
+  ThresholdKnowledgeRanker; провайдер собирает KnowledgeMatch (chunk + score +
+  match_type), ranker применяет порог (knowledge_similarity_threshold=0.25) →
+  sort → append substring → limit. Наружу — list[KnowledgeChunk], контракт
+  KnowledgeProvider.search() неизменен. threshold/min_score НЕ в сигнатуре
+  rank() — следующий ранкер (MMR/recency/citation) не меняет интерфейс
+* выбор провайдера знаний — providers.Selector по вычисляемому ключу
+  (knowledge_backend × knowledge_search_mode), симметрично памяти
+* KnowledgeRecord — отдельная таблица (knowledge) с nullable embedding-колонкой
 * KnowledgeContextLayer активен: ищет по последнему USER-сообщению (как память,
   чтобы не искать по tool-выводам) и инъектирует чанки system-сообщением
-* Ingestion/chunking, semantic-поиск, ranking — отдельные шаги, по той же
-  траектории, что прошла память
-* MemoryRanker НЕ обобщался в Ranker[T]: один потребитель ranking, обобщение
-  ради красоты — преждевременно
+* Ingestion/chunking — отдельный шаг, по той же траектории, что прошла память
+* Структурная симметрия Memory/Knowledge выдержана намеренно (Sqlite* и
+  SemanticSqlite* провайдеры, *Ranker + *Match + MatchType в обеих подсистемах),
+  даже ценой похожего кода — дерево проекта самодокументирует эволюцию
+* Ranker НЕ обобщён в Ranker[T]: потребителей ranking два (memory, knowledge),
+  порог genericization — третий независимый потребитель. MemoryMatch.entry vs
+  KnowledgeMatch.chunk и продублированный MatchType — честная независимость;
+  обобщение отложено до появления устойчивой общей модели
+* cosine_similarity вынесена в app/utils/ (чистая математика, не доменный
+  контракт → не в core); переиспользуется памятью и знаниями без связывания
+  подсистем друг с другом
 
 ### Persistence
 * app/persistence/ — SQLAlchemy async engine + ORM (MemoryRecord, KnowledgeRecord)
@@ -132,8 +148,7 @@ LLMProvider.generate()
 
 ### Knowledge (RAG)
 * Ingestion / Chunking (парсинг документов, нарезка на чанки)
-* Semantic Knowledge Retrieval (embeddings + cosine)
-* Knowledge Ranking (порог/relevance)
+* Ranking-стратегии: recency / MMR / citation weight / source priority
 
 ### Platform
 * Plugins (реальные интеграции)

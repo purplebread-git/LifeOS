@@ -40,5 +40,6 @@ class KnowledgeRecord(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     source: Mapped[str] = mapped_column(String, nullable=False)
     knowledge_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
-    # embedding-колонки нет намеренно: semantic-поиск — отдельный этап, тут
-    # только persistent substring-хранилище.
+    # nullable: чанк сохраняется даже если генерация эмбеддинга не удалась
+    # (сбой OpenAI). Поиск деградирует к substring для таких записей.
+    embedding: Mapped[list[float] | None] = mapped_column(JSON, nullable=True, default=None)
