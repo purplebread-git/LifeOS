@@ -6,8 +6,11 @@
 Сервис НЕ знает про формат (это внутри extractor) и НЕ содержит бизнес-логики
 сверх оркестрации: ни логирования, ни retries, ни dedup, ни merge policy, ни
 progress-callbacks. Всё это — при необходимости — добавляется позже, не ломая
-контракт. Добавление нового формата = регистрация нового DocumentExtractor,
-без изменений здесь.
+контракт.
+
+Выбор extractor'а по source делегирован ExtractorRegistry. Архитектурный
+инвариант: добавление нового формата = запись в реестре + новый
+DocumentExtractor, БЕЗ изменений в этом сервисе.
 """
 
 from __future__ import annotations
@@ -15,19 +18,19 @@ from __future__ import annotations
 from typing import Any
 
 from app.core.chunker import Chunker
-from app.core.document_extractor import DocumentExtractor
 from app.core.knowledge_provider import KnowledgeProvider
+from app.knowledge.extractor_registry import ExtractorRegistry
 from app.models.knowledge import KnowledgeChunk
 
 
 class DocumentIngestionService:
     def __init__(
         self,
-        extractor: DocumentExtractor,
+        extractor_registry: ExtractorRegistry,
         chunker: Chunker,
         knowledge_provider: KnowledgeProvider,
     ) -> None:
-        self._extractor = extractor
+        self._extractor_registry = extractor_registry
         self._chunker = chunker
         self._knowledge_provider = knowledge_provider
 
@@ -37,7 +40,8 @@ class DocumentIngestionService:
         source: str,
         metadata: dict[str, Any] | None = None,
     ) -> list[KnowledgeChunk]:
-        text = await self._extractor.extract(content)
+        extractor = self._extractor_registry.resolve(source)
+        text = await extractor.extract(content)
         if not text.strip():
             return []
 

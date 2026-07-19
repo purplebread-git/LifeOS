@@ -2,6 +2,7 @@ import pytest
 
 from app.core.execution_context import ExecutionContext
 from app.knowledge.document_ingestion_service import DocumentIngestionService
+from app.knowledge.extractor_registry import ExtractorRegistry
 from app.knowledge.fixed_size_chunker import FixedSizeChunker
 from app.knowledge.in_memory_knowledge_provider import InMemoryKnowledgeProvider
 from app.knowledge.plain_text_extractor import PlainTextExtractor
@@ -15,7 +16,7 @@ from app.tools.search_knowledge_tool import SearchKnowledgeTool
 
 def _context(provider: InMemoryKnowledgeProvider) -> ExecutionContext:
     service = DocumentIngestionService(
-        extractor=PlainTextExtractor(),
+        extractor_registry=ExtractorRegistry(default=PlainTextExtractor()),
         chunker=FixedSizeChunker(),
         knowledge_provider=provider,
     )

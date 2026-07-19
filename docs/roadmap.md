@@ -48,13 +48,14 @@
 - [x] Chunking Engine (Chunker ABC + FixedSizeChunker)
 - [x] Document Ingestion (DocumentExtractor ABC + PlainTextExtractor + DocumentIngestionService)
 - [x] Knowledge Source Management (list_sources / delete_source — доменная модель вокруг source завершена)
+- [x] Extractor Routing (ExtractorRegistry: extension → extractor, default PlainText; сервис-инвариант)
 
 ## Capabilities
 Возможности агента, открытые через инструменты (Tool → Capability).
 - [x] Memory Tools (RememberTool, SearchMemoryTool)
 - [x] Knowledge Tools (IngestDocumentTool, SearchKnowledgeTool) — Knowledge MVP замкнут
 - [x] Knowledge Source Tools (ListSourcesTool, DeleteSourceTool)
-- [ ] Additional Extractors (Markdown / PDF / DOCX / HTML / RemoteUrl — новый адаптер за контрактом)
+- [ ] Additional Extractors (Markdown / PDF / DOCX / HTML / RemoteUrl — чистый адаптер + запись в реестре)
 
 ### Extensions (расширения поверх готового ядра, не обязательные этапы)
 - [ ] Memory: Recency / Hybrid / MMR / LLM Reranker; Maintenance (rebuild_embeddings, dedup)

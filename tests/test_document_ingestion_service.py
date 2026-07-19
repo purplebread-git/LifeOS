@@ -1,4 +1,5 @@
 from app.knowledge.document_ingestion_service import DocumentIngestionService
+from app.knowledge.extractor_registry import ExtractorRegistry
 from app.knowledge.fixed_size_chunker import FixedSizeChunker
 from app.knowledge.in_memory_knowledge_provider import InMemoryKnowledgeProvider
 from app.knowledge.plain_text_extractor import PlainTextExtractor
@@ -10,7 +11,7 @@ def _service(
     overlap: int = 200,
 ) -> DocumentIngestionService:
     return DocumentIngestionService(
-        extractor=PlainTextExtractor(),
+        extractor_registry=ExtractorRegistry(default=PlainTextExtractor()),
         chunker=FixedSizeChunker(chunk_size=chunk_size, overlap=overlap),
         knowledge_provider=provider,
     )
@@ -66,3 +67,28 @@ async def test_ingest_passes_metadata_through() -> None:
 
     assert chunks[0].metadata["lang"] == "en"
     assert chunks[0].metadata["chunk_index"] == 0
+
+
+async def test_ingest_routes_extractor_by_source_extension() -> None:
+    # Инвариант роутинга: сервис выбирает extractor по source через реестр.
+    from app.core.document_extractor import DocumentExtractor
+
+    class _UpperExtractor(DocumentExtractor):
+        async def extract(self, content: bytes) -> str:
+            return content.decode("utf-8").upper()
+
+    provider = InMemoryKnowledgeProvider()
+    service = DocumentIngestionService(
+        extractor_registry=ExtractorRegistry(
+            default=PlainTextExtractor(),
+            extractors={".up": _UpperExtractor()},
+        ),
+        chunker=FixedSizeChunker(),
+        knowledge_provider=provider,
+    )
+
+    upper_chunks = await service.ingest(b"hello", source="a.up")
+    plain_chunks = await service.ingest(b"world", source="b.txt")
+
+    assert upper_chunks[0].content == "HELLO"
+    assert plain_chunks[0].content == "world"
