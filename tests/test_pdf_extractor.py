@@ -1,8 +1,8 @@
 import pytest
+from pdf_fixtures import make_text_pdf, make_textless_pdf
 from pypdf.errors import PyPdfError
 
 from app.knowledge.pdf_extractor import PdfExtractor
-from tests.pdf_fixtures import make_text_pdf, make_textless_pdf
 
 
 async def test_extracts_embedded_text() -> None:

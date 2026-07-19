@@ -6,6 +6,8 @@
 требуется совпадение «языка общения» с системой.
 """
 
+from pdf_fixtures import make_text_pdf
+
 from app.knowledge.document_ingestion_service import DocumentIngestionService
 from app.knowledge.extractor_registry import ExtractorRegistry
 from app.knowledge.fixed_size_chunker import FixedSizeChunker
@@ -13,7 +15,6 @@ from app.knowledge.in_memory_knowledge_provider import InMemoryKnowledgeProvider
 from app.knowledge.markdown_extractor import MarkdownExtractor
 from app.knowledge.pdf_extractor import PdfExtractor
 from app.knowledge.plain_text_extractor import PlainTextExtractor
-from tests.pdf_fixtures import make_text_pdf
 
 
 def _service(provider: InMemoryKnowledgeProvider) -> DocumentIngestionService:
