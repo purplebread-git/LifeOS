@@ -31,6 +31,7 @@ from app.knowledge.extractor_registry import ExtractorRegistry
 from app.knowledge.fixed_size_chunker import FixedSizeChunker
 from app.knowledge.in_memory_knowledge_provider import InMemoryKnowledgeProvider
 from app.knowledge.markdown_extractor import MarkdownExtractor
+from app.knowledge.pdf_extractor import PdfExtractor
 from app.knowledge.plain_text_extractor import PlainTextExtractor
 from app.knowledge.semantic_sqlite_knowledge_provider import SemanticSqliteKnowledgeProvider
 from app.knowledge.sqlite_knowledge_provider import SqliteKnowledgeProvider
@@ -213,6 +214,7 @@ class Container(containers.DeclarativeContainer):
             {
                 ".md": markdown_extractor,
                 ".markdown": markdown_extractor,
+                ".pdf": providers.Singleton(PdfExtractor),
             }
         ),
     )
