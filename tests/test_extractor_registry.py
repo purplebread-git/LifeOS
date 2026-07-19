@@ -1,6 +1,7 @@
 from app.core.document_extractor import DocumentExtractor
 from app.knowledge.extractor_registry import ExtractorRegistry
 from app.knowledge.markdown_extractor import MarkdownExtractor
+from app.knowledge.pdf_extractor import PdfExtractor
 from app.knowledge.plain_text_extractor import PlainTextExtractor
 
 
@@ -65,4 +66,18 @@ def test_markdown_routing_for_md_and_markdown_extensions() -> None:
 
     assert registry.resolve("notes.md") is markdown
     assert registry.resolve("notes.markdown") is markdown
+    assert registry.resolve("notes.txt") is plain
+
+
+def test_binary_and_text_formats_route_independently() -> None:
+    markdown = MarkdownExtractor()
+    pdf = PdfExtractor()
+    plain = PlainTextExtractor()
+    registry = ExtractorRegistry(
+        default=plain,
+        extractors={".md": markdown, ".pdf": pdf},
+    )
+
+    assert registry.resolve("manual.pdf") is pdf
+    assert registry.resolve("README.md") is markdown
     assert registry.resolve("notes.txt") is plain

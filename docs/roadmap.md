@@ -50,6 +50,7 @@
 - [x] Knowledge Source Management (list_sources / delete_source — доменная модель вокруг source завершена)
 - [x] Extractor Routing (ExtractorRegistry: extension → extractor, default PlainText; сервис-инвариант)
 - [x] MarkdownExtractor (markdown-it-py + собственный обход токенов, .md/.markdown) — доказательство горизонтального расширения
+- [x] PdfExtractor (pypdf, встроенный текст, без OCR, .pdf) — расширение проверено на бинарном формате
 
 ## Capabilities
 Возможности агента, открытые через инструменты (Tool → Capability).
@@ -57,7 +58,9 @@
 - [x] Knowledge Tools (IngestDocumentTool, SearchKnowledgeTool) — Knowledge MVP замкнут
 - [x] Knowledge Source Tools (ListSourcesTool, DeleteSourceTool)
 - [x] MarkdownExtractor (.md / .markdown) — подключён чистым адаптером + записью в реестре
-- [ ] Additional Extractors (PDF / DOCX / HTML / RemoteUrl — чистый адаптер + запись в реестре)
+- [x] PdfExtractor (.pdf) — первый бинарный формат, подключён так же (регистрация в реестре)
+- [ ] Анализ повторяемости extractor'ов (после трёх реализаций: есть ли BaseExtractor / общие утилиты)
+- [ ] Additional Extractors (DOCX / HTML / RemoteUrl — чистый адаптер + запись в реестре)
 
 ### Extensions (расширения поверх готового ядра, не обязательные этапы)
 - [ ] Memory: Recency / Hybrid / MMR / LLM Reranker; Maintenance (rebuild_embeddings, dedup)
