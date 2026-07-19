@@ -12,10 +12,17 @@ LifeOS Agent — Architecture Status
 ### Tooling & ReAct
 * ToolManager
 * ReAct ConversationEngine (ToolConversationEngine)
-* ExecutionContext
+* ExecutionContext — реестр capabilities для инструментов (memory, knowledge,
+  ingestion), НЕ service locator: технические зависимости (database,
+  embedding_provider, settings, logger) сюда не кладём
 * Tool Calling Loop
-* RememberTool
-* SearchMemoryTool
+* RememberTool / SearchMemoryTool
+* IngestDocumentTool / SearchKnowledgeTool
+
+Принцип tool-слоя: Agent → Tool → Capability → Infrastructure. Инструмент
+никогда не оркестрирует инфраструктуру сам (не знает про extractor / chunker /
+add_batch / embeddings) — он лишь открывает агенту доступ к уже существующей
+capability через ExecutionContext. Tool-слой остаётся тонким.
 
 ### Memory
 * MemoryProvider (ABC)
@@ -89,7 +96,14 @@ Memory Ranking (retrieval pipeline):
   Сервис НЕ знает про формат (весь format-роутинг — внутри extractor) и не несёт
   логики сверх оркестрации (ни логов, ни retries, ни dedup) — новый формат =
   новый DocumentExtractor, пайплайн не меняется. chunker в DI с дефолтами
-  (settings chunk_size/overlap появятся с UI/CLI-потребителем)
+  (settings chunk_size/overlap появятся с UI/CLI-потребителем). После появления
+  внешнего потребителя (Knowledge Tools) контракт сервиса — публичный
+* Knowledge Tools: IngestDocumentTool (Tool → DocumentIngestionService) +
+  SearchKnowledgeTool (Tool → KnowledgeProvider.search). Замыкают контур
+  Agent ↔ Knowledge: агент читает текст → сохраняет → находит → использует.
+  Формат ответа search'а блочный (Source + content) — расширяем под будущие
+  поля (section/page/relevance) без слома структуры. Knowledge MVP закрыт;
+  list_sources/delete_source (расширение контракта провайдера) — отдельный PR
 * Структурная симметрия Memory/Knowledge выдержана намеренно (Sqlite* и
   SemanticSqlite* провайдеры, *Ranker + *Match + MatchType в обеих подсистемах),
   даже ценой похожего кода — дерево проекта самодокументирует эволюцию

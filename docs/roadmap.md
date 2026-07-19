@@ -51,10 +51,12 @@
 - [x] Knowledge Ranking (KnowledgeRanker + ThresholdKnowledgeRanker, similarity threshold)
 - [x] Chunking Engine (Chunker ABC + FixedSizeChunker, text → KnowledgeChunk[])
 - [x] Document Ingestion (DocumentExtractor ABC + PlainTextExtractor + DocumentIngestionService)
+- [x] Knowledge Tools (ingest_document + search_knowledge) — Knowledge MVP замкнут
 
 ### Next
+- [ ] Knowledge Management (KnowledgeProvider.list_sources / delete_source — расширение контракта)
 - [ ] Extractors: Markdown / PDF / DOCX / HTML / RemoteUrl (новый адаптер за контрактом)
-- [ ] Knowledge Management Tools (agent-facing ingest/list/delete)
+- [ ] Context Composer (когда ContextLayer'ов станет достаточно: порядок/бюджет/приоритеты)
 - [ ] Chunking-стратегии: sentence / paragraph / recursive / token / semantic
 - [ ] Ranking-стратегии: recency / MMR / citation weight / source priority
 - 

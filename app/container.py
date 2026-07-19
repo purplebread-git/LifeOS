@@ -41,7 +41,12 @@ from app.persistence.database import init_database
 from app.plugins.manager import SimplePluginManager
 from app.plugins.registry import SimplePluginRegistry
 from app.providers.openai import OpenAIClient, OpenAIEmbeddingProvider, OpenAIProvider
-from app.tools import RememberTool, SearchMemoryTool
+from app.tools import (
+    IngestDocumentTool,
+    RememberTool,
+    SearchKnowledgeTool,
+    SearchMemoryTool,
+)
 from app.tools.simple_tool_manager import SimpleToolManager
 
 
@@ -219,6 +224,8 @@ class Container(containers.DeclarativeContainer):
         tools=[
             RememberTool(),
             SearchMemoryTool(),
+            IngestDocumentTool(),
+            SearchKnowledgeTool(),
         ],
     )
 
@@ -240,6 +247,8 @@ class Container(containers.DeclarativeContainer):
         context_builder=context_builder,
         tool_manager=tool_manager,
         memory_provider=memory_provider,
+        knowledge_provider=knowledge_provider,
+        ingestion_service=document_ingestion_service,
     )
 
     agent = providers.Singleton(
