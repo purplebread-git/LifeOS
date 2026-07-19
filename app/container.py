@@ -42,7 +42,9 @@ from app.plugins.manager import SimplePluginManager
 from app.plugins.registry import SimplePluginRegistry
 from app.providers.openai import OpenAIClient, OpenAIEmbeddingProvider, OpenAIProvider
 from app.tools import (
+    DeleteSourceTool,
     IngestDocumentTool,
+    ListSourcesTool,
     RememberTool,
     SearchKnowledgeTool,
     SearchMemoryTool,
@@ -226,6 +228,8 @@ class Container(containers.DeclarativeContainer):
             SearchMemoryTool(),
             IngestDocumentTool(),
             SearchKnowledgeTool(),
+            ListSourcesTool(),
+            DeleteSourceTool(),
         ],
     )
 

@@ -170,6 +170,47 @@ async def test_substring_fallback_for_null_embedding_chunks() -> None:
     assert "Python is a language" in contents
 
 
+async def test_list_sources_unique_and_sorted(
+    provider: SemanticSqliteKnowledgeProvider,
+) -> None:
+    await provider.add_batch(
+        [
+            KnowledgeChunk(id="1", content="a", source="zeta"),
+            KnowledgeChunk(id="2", content="b", source="alpha"),
+            KnowledgeChunk(id="3", content="c", source="alpha"),
+        ]
+    )
+
+    assert await provider.list_sources() == ["alpha", "zeta"]
+
+
+async def test_delete_source_removes_only_its_chunks(
+    provider: SemanticSqliteKnowledgeProvider,
+) -> None:
+    await provider.add_batch(
+        [
+            KnowledgeChunk(id="1", content="Python code", source="a"),
+            KnowledgeChunk(id="2", content="more code", source="a"),
+            KnowledgeChunk(id="3", content="Paris city", source="b"),
+        ]
+    )
+
+    deleted = await provider.delete_source("a")
+
+    assert deleted == 2
+    assert await provider.list_sources() == ["b"]
+
+
+async def test_delete_source_is_idempotent(
+    provider: SemanticSqliteKnowledgeProvider,
+) -> None:
+    await provider.add(KnowledgeChunk(id="1", content="x", source="a"))
+
+    assert await provider.delete_source("missing") == 0
+    assert await provider.delete_source("a") == 1
+    assert await provider.delete_source("a") == 0
+
+
 async def test_knowledge_survives_engine_restart(tmp_path: Path) -> None:
     database_url = f"sqlite+aiosqlite:///{tmp_path}/semantic_knowledge.db"
 

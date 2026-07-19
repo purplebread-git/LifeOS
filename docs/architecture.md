@@ -18,11 +18,16 @@ LifeOS Agent — Architecture Status
 * Tool Calling Loop
 * RememberTool / SearchMemoryTool
 * IngestDocumentTool / SearchKnowledgeTool
+* ListSourcesTool / DeleteSourceTool
 
-Принцип tool-слоя: Agent → Tool → Capability → Infrastructure. Инструмент
-никогда не оркестрирует инфраструктуру сам (не знает про extractor / chunker /
-add_batch / embeddings) — он лишь открывает агенту доступ к уже существующей
-capability через ExecutionContext. Tool-слой остаётся тонким.
+Принцип tool-слоя (общий паттерн LifeOS): `Infrastructure → Capability → Tool →
+Agent`. Инструмент никогда не оркестрирует инфраструктуру сам (не знает про
+extractor / chunker / add_batch / embeddings / SQL) — он лишь открывает агенту
+доступ к уже существующей capability через ExecutionContext. Инфраструктурные
+детали полностью скрыты, tool-слой остаётся тонким. Наблюдаемая (но пока не
+выделенная) точка абстракции — повторяющийся шаблон инструмента: проверить
+capability → вызвать → отформатировать результат → вернуть ToolResult; при 4
+инструментах абстрагировать преждевременно (правило третьего потребителя).
 
 ### Memory
 * MemoryProvider (ABC)
@@ -102,8 +107,17 @@ Memory Ranking (retrieval pipeline):
   SearchKnowledgeTool (Tool → KnowledgeProvider.search). Замыкают контур
   Agent ↔ Knowledge: агент читает текст → сохраняет → находит → использует.
   Формат ответа search'а блочный (Source + content) — расширяем под будущие
-  поля (section/page/relevance) без слома структуры. Knowledge MVP закрыт;
-  list_sources/delete_source (расширение контракта провайдера) — отдельный PR
+  поля (section/page/relevance) без слома структуры
+* Knowledge Source Management: контракт KnowledgeProvider расширен вокруг
+  сущности source — list_sources() → list[str] (уникальные, отсортированные) и
+  delete_source(source) → int (число удалённых чанков). delete_source
+  идемпотентен: несуществующий источник → 0, без исключения. Реализовано во всех
+  трёх провайдерах (In-Memory, Sqlite, SemanticSqlite). Агентские инструменты —
+  ListSourcesTool / DeleteSourceTool. После этого доменная модель Knowledge
+  вокруг source завершена; statistics / rename / delete_chunk сознательно
+  отложены. DocumentIngestionService.ingest() и KnowledgeProvider.search()/
+  .list_sources()/.delete_source() имеют внешних потребителей → это стабильный
+  публичный контракт, изменения сигнатур должны быть осознанными
 * Структурная симметрия Memory/Knowledge выдержана намеренно (Sqlite* и
   SemanticSqlite* провайдеры, *Ranker + *Match + MatchType в обеих подсистемах),
   даже ценой похожего кода — дерево проекта самодокументирует эволюцию
