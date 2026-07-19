@@ -27,6 +27,7 @@ from app.context import (
 from app.conversation.in_memory_repository import InMemoryConversationRepository
 from app.core.plugin import Plugin
 from app.knowledge.document_ingestion_service import DocumentIngestionService
+from app.knowledge.extractor_registry import ExtractorRegistry
 from app.knowledge.fixed_size_chunker import FixedSizeChunker
 from app.knowledge.in_memory_knowledge_provider import InMemoryKnowledgeProvider
 from app.knowledge.plain_text_extractor import PlainTextExtractor
@@ -199,15 +200,19 @@ class Container(containers.DeclarativeContainer):
 
     # Ingestion pipeline: extractor (bytes→text) → chunker (text→chunks) →
     # knowledge_provider.add_batch. Chunker с дефолтами (settings появятся, когда
-    # будет UI/CLI-потребитель тюнинга). Формат-роутинг живёт в extractor, не в
-    # сервисе; новый формат = новый DocumentExtractor.
-    document_extractor = providers.Singleton(PlainTextExtractor)
+    # будет UI/CLI-потребитель тюнинга). Формат-роутинг живёт в ExtractorRegistry
+    # (по расширению source, default → PlainText); новый формат = запись в реестре
+    # + новый DocumentExtractor, без изменений DocumentIngestionService.
+    extractor_registry = providers.Singleton(
+        ExtractorRegistry,
+        default=providers.Singleton(PlainTextExtractor),
+    )
 
     chunker = providers.Singleton(FixedSizeChunker)
 
     document_ingestion_service = providers.Singleton(
         DocumentIngestionService,
-        extractor=document_extractor,
+        extractor_registry=extractor_registry,
         chunker=chunker,
         knowledge_provider=knowledge_provider,
     )

@@ -97,12 +97,19 @@ Memory Ranking (retrieval pipeline):
   детерминирован и устойчив к сдвигам содержимого (в отличие от source#index)
 * Document Ingestion: DocumentExtractor (ABC, async extract(content: bytes) → str)
   + PlainTextExtractor (utf-8) + DocumentIngestionService (тонкая оркестрация:
-  extract → strip → пусто→[] → split → add_batch → return list[KnowledgeChunk]).
-  Сервис НЕ знает про формат (весь format-роутинг — внутри extractor) и не несёт
-  логики сверх оркестрации (ни логов, ни retries, ни dedup) — новый формат =
-  новый DocumentExtractor, пайплайн не меняется. chunker в DI с дефолтами
-  (settings chunk_size/overlap появятся с UI/CLI-потребителем). После появления
-  внешнего потребителя (Knowledge Tools) контракт сервиса — публичный
+  resolve extractor → extract → strip → пусто→[] → split → add_batch → return
+  list[KnowledgeChunk]). Сервис не несёт логики сверх оркестрации (ни логов, ни
+  retries, ни dedup). chunker в DI с дефолтами (settings chunk_size/overlap
+  появятся с UI/CLI-потребителем). После появления внешнего потребителя
+  (Knowledge Tools) контракт сервиса — публичный
+* Extractor Routing: ExtractorRegistry (extension → DocumentExtractor, default →
+  PlainText). Роутинг живёт в реестре, а не в сервисе и не в extractor'е:
+  реестр знает source, extractor остаётся узким (bytes → text). Ключ —
+  расширение из source, регистронезависимо; неизвестное/без расширения →
+  default. Архитектурный инвариант: после ввода реестра
+  DocumentIngestionService больше НЕ меняется при добавлении форматов —
+  новый формат = запись в реестре + новый DocumentExtractor (проверка
+  горизонтального расширения)
 * Knowledge Tools: IngestDocumentTool (Tool → DocumentIngestionService) +
   SearchKnowledgeTool (Tool → KnowledgeProvider.search). Замыкают контур
   Agent ↔ Knowledge: агент читает текст → сохраняет → находит → использует.
