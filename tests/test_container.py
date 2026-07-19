@@ -22,6 +22,7 @@ from app.core.knowledge_provider import KnowledgeProvider
 from app.core.llm_provider import LLMProvider
 from app.core.memory_provider import MemoryProvider
 from app.core.plugin_registry import PluginRegistry
+from app.knowledge.document_ingestion_service import DocumentIngestionService
 from app.knowledge.sqlite_knowledge_provider import SqliteKnowledgeProvider
 from app.memory.sqlite_memory_provider import SqliteMemoryProvider
 from app.providers.openai import OpenAIProvider
@@ -79,6 +80,11 @@ async def test_container_resolves_knowledge_provider_as_sqlite(container: Contai
     provider = await container.knowledge_provider()
     assert isinstance(provider, SqliteKnowledgeProvider)
     assert isinstance(provider, KnowledgeProvider)
+
+
+async def test_container_resolves_document_ingestion_service(container: Container) -> None:
+    service = await container.document_ingestion_service()  # type: ignore[misc]
+    assert isinstance(service, DocumentIngestionService)
 
 
 async def test_container_resolves_context_builder_as_layered(container: Container) -> None:

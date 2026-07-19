@@ -26,7 +26,10 @@ from app.context import (
 )
 from app.conversation.in_memory_repository import InMemoryConversationRepository
 from app.core.plugin import Plugin
+from app.knowledge.document_ingestion_service import DocumentIngestionService
+from app.knowledge.fixed_size_chunker import FixedSizeChunker
 from app.knowledge.in_memory_knowledge_provider import InMemoryKnowledgeProvider
+from app.knowledge.plain_text_extractor import PlainTextExtractor
 from app.knowledge.semantic_sqlite_knowledge_provider import SemanticSqliteKnowledgeProvider
 from app.knowledge.sqlite_knowledge_provider import SqliteKnowledgeProvider
 from app.knowledge.threshold_knowledge_ranker import ThresholdKnowledgeRanker
@@ -185,6 +188,21 @@ class Container(containers.DeclarativeContainer):
         memory=in_memory_knowledge_provider,
         sqlite=sqlite_knowledge_provider,
         semantic_sqlite=semantic_sqlite_knowledge_provider,
+    )
+
+    # Ingestion pipeline: extractor (bytes→text) → chunker (text→chunks) →
+    # knowledge_provider.add_batch. Chunker с дефолтами (settings появятся, когда
+    # будет UI/CLI-потребитель тюнинга). Формат-роутинг живёт в extractor, не в
+    # сервисе; новый формат = новый DocumentExtractor.
+    document_extractor = providers.Singleton(PlainTextExtractor)
+
+    chunker = providers.Singleton(FixedSizeChunker)
+
+    document_ingestion_service = providers.Singleton(
+        DocumentIngestionService,
+        extractor=document_extractor,
+        chunker=chunker,
+        knowledge_provider=knowledge_provider,
     )
 
     conversation_repository = providers.Singleton(InMemoryConversationRepository)
