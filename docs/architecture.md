@@ -77,7 +77,15 @@ Memory Ranking (retrieval pipeline):
 * KnowledgeRecord — отдельная таблица (knowledge) с nullable embedding-колонкой
 * KnowledgeContextLayer активен: ищет по последнему USER-сообщению (как память,
   чтобы не искать по tool-выводам) и инъектирует чанки system-сообщением
-* Ingestion/chunking — отдельный шаг, по той же траектории, что прошла память
+* Chunking Engine: Chunker (ABC, метод split) + FixedSizeChunker — чистый
+  алгоритм text → KnowledgeChunk[], без файлов/DI (потребитель — ingestion #19).
+  Word-based greedy packing (не режет слова, пробелы нормализуются), инвариант
+  len(content) <= chunk_size ВСЕГДА (слово длиннее размера режется жёстко),
+  overlap по границам слов. id чанка = sha256(source + content) —
+  детерминирован и устойчив к сдвигам содержимого (в отличие от source#index)
+* Document Ingestion (extractors формата → text → Chunker → add_batch) —
+  отдельный шаг #19; единый контракт извлечения (DocumentExtractor) вводится
+  тогда же, чтобы новые форматы добавлялись адаптером, а не правкой пайплайна
 * Структурная симметрия Memory/Knowledge выдержана намеренно (Sqlite* и
   SemanticSqlite* провайдеры, *Ranker + *Match + MatchType в обеих подсистемах),
   даже ценой похожего кода — дерево проекта самодокументирует эволюцию
@@ -147,7 +155,8 @@ LLMProvider.generate()
 * Context Trimming
 
 ### Knowledge (RAG)
-* Ingestion / Chunking (парсинг документов, нарезка на чанки)
+* Document Ingestion (extractors TXT/MD/PDF → text → Chunker → add_batch)
+* Chunking-стратегии: sentence / paragraph / recursive / token / semantic
 * Ranking-стратегии: recency / MMR / citation weight / source priority
 
 ### Platform

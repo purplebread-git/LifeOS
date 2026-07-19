@@ -49,9 +49,11 @@
 - [x] Persistent Knowledge (SqliteKnowledgeProvider + KnowledgeRecord)
 - [x] Semantic Knowledge Retrieval (SemanticSqliteKnowledgeProvider, embeddings + cosine)
 - [x] Knowledge Ranking (KnowledgeRanker + ThresholdKnowledgeRanker, similarity threshold)
+- [x] Chunking Engine (Chunker ABC + FixedSizeChunker, text → KnowledgeChunk[])
 
 ### Next
-- [ ] Ingestion / Chunking (парсинг документов, нарезка)
+- [ ] Document Ingestion (extractors: TXT/MD/PDF → text → Chunker → add_batch)
+- [ ] Chunking-стратегии: sentence / paragraph / recursive / token / semantic
 - [ ] Ranking-стратегии: recency / MMR / citation weight / source priority
 - 
 ## Platform
