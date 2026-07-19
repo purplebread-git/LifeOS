@@ -69,6 +69,31 @@ async def test_ingest_passes_metadata_through() -> None:
     assert chunks[0].metadata["chunk_index"] == 0
 
 
+async def test_ingest_markdown_source_is_stripped_via_registry() -> None:
+    # Проверка горизонтального расширения: .md подключается регистрацией
+    # MarkdownExtractor в реестре, DocumentIngestionService не меняется.
+    from app.knowledge.markdown_extractor import MarkdownExtractor
+
+    markdown = MarkdownExtractor()
+    provider = InMemoryKnowledgeProvider()
+    service = DocumentIngestionService(
+        extractor_registry=ExtractorRegistry(
+            default=PlainTextExtractor(),
+            extractors={".md": markdown, ".markdown": markdown},
+        ),
+        chunker=FixedSizeChunker(),
+        knowledge_provider=provider,
+    )
+
+    chunks = await service.ingest(
+        b"# LifeOS\n\nA **modular** [agent](https://x) platform.",
+        source="handbook.md",
+    )
+
+    # Markdown-разметка снята extractor'ом; chunker нормализует пробелы.
+    assert chunks[0].content == "LifeOS A modular agent platform."
+
+
 async def test_ingest_routes_extractor_by_source_extension() -> None:
     # Инвариант роутинга: сервис выбирает extractor по source через реестр.
     from app.core.document_extractor import DocumentExtractor

@@ -106,10 +106,21 @@ Memory Ranking (retrieval pipeline):
   PlainText). Роутинг живёт в реестре, а не в сервисе и не в extractor'е:
   реестр знает source, extractor остаётся узким (bytes → text). Ключ —
   расширение из source, регистронезависимо; неизвестное/без расширения →
-  default. Архитектурный инвариант: после ввода реестра
+  default. Расширение — текущая стратегия сопоставления, а не сущность:
+  публичный контракт resolve(source) открыт к MIME / magic bytes /
+  resolve(source, content) без слома; ResolutionStrategy как абстракция пока не
+  вводится (правило трёх). Архитектурный инвариант: после ввода реестра
   DocumentIngestionService больше НЕ меняется при добавлении форматов —
-  новый формат = запись в реестре + новый DocumentExtractor (проверка
-  горизонтального расширения)
+  новый формат = запись в реестре + новый DocumentExtractor
+* MarkdownExtractor: первый нетривиальный extractor (формат .md/.markdown).
+  Парсинг делегирован markdown-it-py (CommonMark), а ПОЛИТИКА извлечения текста
+  (заголовки/emphasis/ссылки→видимый текст/inline+fenced code/списки/blockquote;
+  images и HTML игнорируются) — доменная логика LifeOS: обход токенов внутри
+  extractor'а, без промежуточного HTML и без внешнего mdit-plain (чтобы будущие
+  изменения политики были локальными). Политика явно зафиксирована в docstring.
+  Подключён БЕЗ единой правки DocumentIngestionService/Chunker/KnowledgeProvider/
+  Tool/Agent — только регистрацией в реестре: первое сильное подтверждение, что
+  ingestion открыт для горизонтального расширения
 * Knowledge Tools: IngestDocumentTool (Tool → DocumentIngestionService) +
   SearchKnowledgeTool (Tool → KnowledgeProvider.search). Замыкают контур
   Agent ↔ Knowledge: агент читает текст → сохраняет → находит → использует.

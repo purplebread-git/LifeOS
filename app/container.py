@@ -30,6 +30,7 @@ from app.knowledge.document_ingestion_service import DocumentIngestionService
 from app.knowledge.extractor_registry import ExtractorRegistry
 from app.knowledge.fixed_size_chunker import FixedSizeChunker
 from app.knowledge.in_memory_knowledge_provider import InMemoryKnowledgeProvider
+from app.knowledge.markdown_extractor import MarkdownExtractor
 from app.knowledge.plain_text_extractor import PlainTextExtractor
 from app.knowledge.semantic_sqlite_knowledge_provider import SemanticSqliteKnowledgeProvider
 from app.knowledge.sqlite_knowledge_provider import SqliteKnowledgeProvider
@@ -203,9 +204,17 @@ class Container(containers.DeclarativeContainer):
     # будет UI/CLI-потребитель тюнинга). Формат-роутинг живёт в ExtractorRegistry
     # (по расширению source, default → PlainText); новый формат = запись в реестре
     # + новый DocumentExtractor, без изменений DocumentIngestionService.
+    markdown_extractor = providers.Singleton(MarkdownExtractor)
+
     extractor_registry = providers.Singleton(
         ExtractorRegistry,
         default=providers.Singleton(PlainTextExtractor),
+        extractors=providers.Dict(
+            {
+                ".md": markdown_extractor,
+                ".markdown": markdown_extractor,
+            }
+        ),
     )
 
     chunker = providers.Singleton(FixedSizeChunker)

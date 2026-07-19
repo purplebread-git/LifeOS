@@ -1,5 +1,6 @@
 from app.core.document_extractor import DocumentExtractor
 from app.knowledge.extractor_registry import ExtractorRegistry
+from app.knowledge.markdown_extractor import MarkdownExtractor
 from app.knowledge.plain_text_extractor import PlainTextExtractor
 
 
@@ -52,3 +53,16 @@ def test_default_only_registry_always_returns_default() -> None:
 
     assert registry.resolve("file.md") is default
     assert registry.resolve("plain") is default
+
+
+def test_markdown_routing_for_md_and_markdown_extensions() -> None:
+    markdown = MarkdownExtractor()
+    plain = PlainTextExtractor()
+    registry = ExtractorRegistry(
+        default=plain,
+        extractors={".md": markdown, ".markdown": markdown},
+    )
+
+    assert registry.resolve("notes.md") is markdown
+    assert registry.resolve("notes.markdown") is markdown
+    assert registry.resolve("notes.txt") is plain
