@@ -56,9 +56,9 @@ Application → Container → PluginManager → PluginRegistry → Plugin → (T
 * Plugin → Tool (`EchoPlugin`)
 * Plugin → ContextLayer (`CurrentTimePlugin`)
 
-PluginLoader / auto-discovery / entry points сознательно не вводятся, пока не
-появятся 2–3 *разных* типа расширения (следующий кандидат — DocumentExtractor) —
-тогда станет ясно, чего не хватает API плагинов.
+Аудит Plugin API: `docs/plugin-api-review.md`. Вердикт — API достаточен для
+третьей оси без PluginLoader / generic registry; инфраструктуру не трогаем
+«на будущее».
 
 ### Memory
 * MemoryProvider (ABC)
@@ -250,6 +250,8 @@ MCP → Multi-Agent → Web UI.
 * Plugin Contributed ContextLayer ✅ — `CurrentTimePlugin` → ContextLayer;
   composition root собирает ContextBuilder из core + plugin layers.
   Agent / ConversationEngine / `LayeredContextBuilder` не менялись.
+* Plugin API Review ✅ — `docs/plugin-api-review.md` (вариант А: идти к
+  третьей оси без инфраструктурного PR).
 * Streaming
 * Observability
 

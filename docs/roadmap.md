@@ -74,6 +74,9 @@ Storage → Retrieval → Ranking → Context → LLM.
 - [x] Plugin Contributed ContextLayer (CurrentTimePlugin регистрирует слой;
       ContextBuilder собирается в composition root из core layers + registry;
       две оси: Tool и ContextLayer; ядро не менялось)
+- [x] Plugin API Review (`docs/plugin-api-review.md` — API достаточен для
+      третьей оси; loader/generic registry не нужны пока)
+- [ ] Plugin → DocumentExtractor (третья ось; только после review)
 - [ ] Streaming
 - [ ] Observability
 
@@ -95,6 +98,7 @@ Storage → Retrieval → Ranking → Context → LLM.
 
 ## Next
 
-**Третий тип расширения** (например DocumentExtractor) или Streaming — на выбор.
-Сейчас две оси доказаны: Plugin → Tool и Plugin → ContextLayer. PluginLoader /
-discovery по-прежнему ждут 2–3 разных точки (почти готово к оценке API).
+**Третья ось расширения:** Plugin → DocumentExtractor (или иной кандидат),
+тем же инвариантом composition root. Plugin API по итогам
+`docs/plugin-api-review.md` достаточно для аддитивного расширения —
+без PluginLoader и без generic registry до появления фактов на третьей оси.
