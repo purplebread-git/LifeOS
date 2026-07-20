@@ -45,7 +45,6 @@ class SearchMemoryTool(Tool):
             )
 
         return ToolResult(
-            tool_call_id="search_memory",
             content=[
                 TextBlock(
                     text=result,

@@ -20,6 +20,14 @@ class ToolDefinition(BaseModel):
 
 
 class ToolResult(BaseModel):
-    tool_call_id: str
+    """tool_call_id намеренно необязателен и НЕ устанавливается инструментами.
+
+    Инструмент знает только (arguments → content) и не видит, каким был вызов.
+    Корреляцию с конкретным ToolCall (id, который ждёт обратно OpenAI) проставляет
+    ToolManager — у него есть ToolCall.id. Это разделение ответственности не даёт
+    инструментам ломать протокол tool-calling.
+    """
+
     content: list[ContentBlock]
+    tool_call_id: str | None = None
     is_error: bool = False

@@ -23,7 +23,6 @@ class EchoTool(Tool):
         context: ExecutionContext,
     ) -> ToolResult:
         return ToolResult(
-            tool_call_id="1",
             content=[
                 TextBlock(
                     text=arguments["text"],
@@ -71,6 +70,19 @@ async def test_execute_tool() -> None:
 
     assert isinstance(block, TextBlock)
     assert block.text == "hello"
+
+
+async def test_manager_stamps_tool_call_id_on_result() -> None:
+    # Регрессия: инструмент не знает id вызова; корреляцию проставляет менеджер,
+    # чтобы tool_call_id совпадал с тем, что ждёт обратно OpenAI (call_xxx).
+    manager = SimpleToolManager(tools=[EchoTool()])
+
+    result = await manager.execute(
+        ToolCall(id="call_abc123", tool_name="echo", arguments={"text": "hi"}),
+        ExecutionContext(conversation_id="conv"),
+    )
+
+    assert result.tool_call_id == "call_abc123"
 
 
 async def test_tool_not_found() -> None:

@@ -35,7 +35,6 @@ class EchoTool(Tool):
         context: ExecutionContext,
     ) -> ToolResult:
         return ToolResult(
-            tool_call_id="call-1",
             content=[
                 TextBlock(
                     text=arguments["text"],
@@ -152,6 +151,11 @@ async def test_tool_execution_loop() -> None:
     assert provider.calls == 2
     assert result.role == Role.ASSISTANT
     assert len(conversation.messages) == 4
+
+    # TOOL-сообщение несёт id исходного вызова (call-1), а не имя инструмента.
+    tool_message = conversation.messages[2]
+    assert tool_message.role == Role.TOOL
+    assert tool_message.tool_call_id == "call-1"
 
 
 async def test_no_tool_calls_behaviour_unchanged() -> None:
