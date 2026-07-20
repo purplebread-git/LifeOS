@@ -1,115 +1,62 @@
 # Roadmap
 
-Phase 1 (Core Runtime) завершена. Ядро больше не «строится» — оно стало
-платформой. Дальнейшие пункты — возможности поверх стабильного фундамента,
-а не архитектурные рефакторинги «на всякий случай».
+Инфраструктурный фундамент первой версии завершён (ядро + платформа +
+Streaming + SSE). Критерий успеха дальше — не «архитектура стала чище», а
+«стало удобнее решать реальные задачи».
 
 Общий паттерн ядра: `Infrastructure → Capability → Tool → Agent`.
-Принципы абстракций: `docs/architecture-review.md`
-(вариативность **или** DIP; обобщать после трёх реальных потребителей).
+Принципы: `docs/architecture-review.md`, `docs/plugin-api-review.md`.
 
-Приоритет Phase 2+: Plugins → Streaming → Observability → MCP →
-Multi-Agent → Web UI.
+**Приоритет сейчас:** Dogfooding → Observability (по боли) → MCP → Multi-Agent.
+Не наоборот.
 
 ## Phase 1 — Core Runtime ✅
 
-Цельное ядро: Foundation → Conversation/Tools → Context → Memory →
-Knowledge → Document Ingestion → Architecture Review.
+Foundation → Conversation/Tools → Context → Memory → Knowledge → Ingestion →
+Architecture Review. См. историю PR #1–#26.
 
-### Foundation
-- [x] Core interfaces (ABC)
-- [x] Domain models
-- [x] Dependency Injection Container
-- [x] OpenAIProvider
-- [x] ConversationRepository
-- [x] Real Agent
+## Phase 2 — Platform ✅ (фундамент)
 
-### Conversation & Tool Calling
-- [x] Tool Interface / ToolManager
-- [x] ExecutionContext (реестр capabilities)
-- [x] ReAct Loop / ToolConversationEngine
-- [x] Tool Call Correlation (`tool_call_id` штампует менеджер, не инструмент)
+Расширяемость и пользовательский API первой версии:
 
-### Context System
-- [x] ContextLayer (pipeline contract)
-- [x] Layered ContextBuilder (System / Memory / Knowledge / Conversation)
-- [ ] Context Composer (когда слоёв станет больше — Phase 2+ по необходимости)
-- [ ] Token Budget / Context Trimming
+- [x] Plugin lifecycle + Tool / ContextLayer / DocumentExtractor axes
+- [x] Plugin API Review + frozen until new evidence
+- [x] LLM Streaming MVP + Streaming Tool Calling (один ReAct, два транспорта)
+- [x] FastAPI SSE (`POST /v1/chat/stream`)
 
-### Memory
-Storage → Retrieval → Ranking → Context → LLM.
-- [x] Memory Storage / Context Integration / Persistent / Semantic / Ranking
+## Phase 2.5 — Product / Dogfooding ← сейчас
 
-### Knowledge
-Зеркальная схема памяти; доменная модель вокруг `source`.
-- [x] KnowledgeProvider + KnowledgeChunk + Context Layer
-- [x] Persistent / Semantic / Ranking
-- [x] Chunking + Document Ingestion + Source Management
-- [x] Extractor Routing (ExtractorRegistry)
-- [x] PlainText / Markdown / PDF Extractors
+Сквозной путь Client → Agent → Engine → Tools → Memory/Knowledge → LLM готов.
+Дальше — жить внутри системы и чинить то, что мешает каждый день.
 
-### Capabilities (agent-facing)
-- [x] Memory Tools / Knowledge Tools / Source Tools
+- [x] Minimal CLI (`lifeos chat`) — точка входа для ежедневного использования
+- [ ] Dogfooding fixes (UX, ошибки, команды, память, документы, диалоги) —
+      только из реального опыта, не из гипотез
+- [ ] Stream cancellation — если болит при использовании
+- [ ] Observability — если сложно понимать решения агента
 
-### Architecture Review
-- [x] `docs/architecture-review.md` — принципы и статус абстракций
+## Phase 3 — Connectivity (после dogfooding)
 
-### Core extensions (опционально, не блокируют Phase 2)
-- [ ] Extractor analysis / DOCX / HTML / RemoteUrl
-- [ ] Memory: Recency / Hybrid / MMR / Maintenance
-- [ ] Knowledge: chunking-стратегии, ranking-расширения, statistics/rename
-
-## Phase 2 — Platform
-
-Модель расширения поверх стабильного ядра. Скелет уже есть
-(`Plugin` / `PluginRegistry` / `PluginManager` / `SimplePluginManager`).
-Сначала доказываем lifecycle, потом — первый реальный плагин.
-
-- [x] Plugin lifecycle in runtime (`PluginManager` как Container Resource;
-      FastAPI lifespan → `init_resources` / `shutdown_resources`;
-      acceptance: FakePlugin получает register / startup / shutdown)
-- [x] Plugin Contributed Tool (EchoPlugin регистрирует `echo`; ToolManager
-      собирается в composition root из core tools + PluginRegistry;
-      Agent / ConversationEngine / ToolManager не менялись)
-- [x] Plugin Contributed ContextLayer (CurrentTimePlugin регистрирует слой;
-      ContextBuilder собирается в composition root из core layers + registry;
-      две оси: Tool и ContextLayer; ядро не менялось)
-- [x] Plugin API Review (`docs/plugin-api-review.md` — API достаточен для
-      третьей оси; loader/generic registry не нужны пока)
-- [x] Plugin → DocumentExtractor (UppercaseTextPlugin / `.upper`; три оси;
-      Echo/CurrentTime не менялись; ExtractorRegistry/Ingestion/Agent — нет)
-- [x] Plugin API frozen until new evidence (три оси достаточны; четвёртую
-      искусственно не ищем; loader/generic register не трогаем)
-- [x] LLM Streaming MVP (`LLMProvider.stream` + `ConversationEngine.stream_turn`;
-      инвариант: joined stream == generate text; без tool-calls / SSE / cancel)
-- [x] Streaming + Tool Calling (`stream_turn` = тот же ReAct, что `run_turn`;
-      наружу только текст; без tool events / SSE / cancel)
-- [x] Streaming FastAPI SSE (`POST /v1/chat/stream`; только text `data:`;
-      без WebSocket / heartbeat / event types)
-- [ ] Minimal client (CLI или простой Web UI) — dogfooding
-- [ ] Stream cancellation
-- [ ] Observability
-
-
-## Phase 3 — Connectivity
+Приоритеты пересматриваются по итогам использования.
 
 - [ ] MCP
-- [ ] External Services
-- [ ] Integrations
+- [ ] External Services / Integrations
 
-## Phase 4 — Intelligence
+## Phase 4 — Intelligence (после dogfooding)
 
-- [ ] Multi-Agent / Agent Registry / Task Delegation
-- [ ] Planning
-- [ ] Long-running Tasks
+- [ ] Multi-Agent / Planning / Long-running Tasks
 
 ## Phase 5 — User Experience
 
-- [ ] Web UI
+- [ ] Web UI (если CLI перестанет хватать)
+
+## Core extensions (опционально)
+
+- [ ] Context Composer / Token Budget
+- [ ] Extra extractors / ranking strategies / memory maintenance
 
 ## Next
 
-**Minimal client + dogfooding.** Streaming-архитектура доказана (один ReAct,
-два транспорта + SSE). Следующий фокус — пользоваться системой ежедневно и
-собирать требования из опыта, а не из архитектурных гипотез. Cancellation /
-Observability — после появления реальных болей.
+**Пользоваться LifeOS каждый день** (`uv run lifeos chat`). Следующие PR —
+только то, что всплывает из dogfooding. Observability / MCP / Multi-Agent —
+после реальных болей, не по заранее придуманному порядку.

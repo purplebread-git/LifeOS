@@ -305,10 +305,14 @@ MCP → Multi-Agent → Web UI.
 * Streaming + Tool Calling ✅ — `stream_turn` выполняет тот же ReAct, что
   `run_turn`; наружу только текст, без tool events.
 * Streaming FastAPI SSE ✅ — `POST /v1/chat/stream`; только text transport.
-* Stream cancellation
-* Observability
-* Minimal client / dogfooding (CLI или простой Web UI) — после транспорта
+* Minimal CLI ✅ — `lifeos chat` для dogfooding.
+* Dogfooding fixes / cancellation / observability — по реальной боли.
 
+### Режим разработки (после #36)
+
+Инфраструктурный фундамент v1 завершён. Приоритет: **Dogfooding →
+Observability → MCP → Multi-Agent**. Критерий успеха — удобство реальных
+задач, а не чистота абстракций.
 ### Core extensions (не блокируют Phase 2)
 * Memory: recency / hybrid / MMR; rebuild_embeddings; query builder
 * Context: Token Budget / Trimming / Composer — когда слоёв станет больше
