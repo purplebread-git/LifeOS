@@ -92,6 +92,7 @@ Storage → Retrieval → Ranking → Context → LLM.
 
 ## Next
 
-**Streaming** — следующий крупный шаг Phase 2. Модель расширения плагинами
-доказана (lifecycle + contributed Tool). Discovery / entry points / внешние
-пакеты — позже, когда появятся 2–3 реальных плагина.
+**Второй тип расширения плагинов** (не PluginLoader). Пока доказан только
+Plugin → Tool. Следующий цикл — независимый сценарий (ContextLayer /
+DocumentExtractor / …) без изменения ядра. Discovery и усложнение Plugin API —
+только после 2–3 разных точек регистрации. Затем Streaming.

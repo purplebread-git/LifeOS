@@ -29,6 +29,33 @@ extractor / chunker / add_batch / embeddings / SQL) — он лишь откры
 capability → вызвать → отформатировать результат → вернуть ToolResult; при 4
 инструментах абстрагировать преждевременно (правило третьего потребителя).
 
+### Plugins (Phase 2)
+
+Инвариант расширения платформы (после Plugin Contributed Tool):
+
+**Composition Root — единственная точка подключения платформенных расширений.**
+
+Если для подключения нового Plugin требуется менять что-либо кроме composition
+root (`container.py`) или самого Plugin, модель расширения нарушена.
+
+Цепочка:
+
+```
+Application → Container → PluginManager → PluginRegistry → Plugin → (Tool | …)
+```
+
+Следствия, уже подтверждённые кодом:
+
+* Agent / ConversationEngine / SimpleToolManager не знают о плагинах;
+* Tool не знает, встроенный он или пришёл из плагина;
+* `PluginRegistry.all_registered_tools()` — только для composition root при
+  сборке ToolManager (не для runtime Agent/Engine).
+
+Пока доказана одна точка расширения: Plugin → Tool (`EchoPlugin`).
+PluginLoader / auto-discovery / entry points сознательно не вводятся, пока не
+появятся 2–3 *разных* типа расширения (например Tool + ContextLayer +
+DocumentExtractor) — тогда станет ясно, чего не хватает API плагинов.
+
 ### Memory
 * MemoryProvider (ABC)
 * InMemoryMemoryProvider
