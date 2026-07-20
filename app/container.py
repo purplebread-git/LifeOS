@@ -111,7 +111,8 @@ class Container(containers.DeclarativeContainer):
 
     config = providers.Singleton(get_settings)
 
-    # временно; заменится PluginLoader в Итерации 10
+    # Список плагинов задаётся composition root'ом. Discovery / entry points /
+    # hot reload — следующие PR; сейчас достаточно явного списка (пока пустого).
     plugins: providers.Provider[list[Plugin]] = providers.Object([])
 
     openai_api_key = providers.Callable(_unwrap_secret, config.provided.openai_api_key)
