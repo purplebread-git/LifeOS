@@ -71,6 +71,9 @@ Storage → Retrieval → Ranking → Context → LLM.
 - [x] Plugin Contributed Tool (EchoPlugin регистрирует `echo`; ToolManager
       собирается в composition root из core tools + PluginRegistry;
       Agent / ConversationEngine / ToolManager не менялись)
+- [x] Plugin Contributed ContextLayer (CurrentTimePlugin регистрирует слой;
+      ContextBuilder собирается в composition root из core layers + registry;
+      две оси: Tool и ContextLayer; ядро не менялось)
 - [ ] Streaming
 - [ ] Observability
 
@@ -92,7 +95,6 @@ Storage → Retrieval → Ranking → Context → LLM.
 
 ## Next
 
-**Второй тип расширения плагинов** (не PluginLoader). Пока доказан только
-Plugin → Tool. Следующий цикл — независимый сценарий (ContextLayer /
-DocumentExtractor / …) без изменения ядра. Discovery и усложнение Plugin API —
-только после 2–3 разных точек регистрации. Затем Streaming.
+**Третий тип расширения** (например DocumentExtractor) или Streaming — на выбор.
+Сейчас две оси доказаны: Plugin → Tool и Plugin → ContextLayer. PluginLoader /
+discovery по-прежнему ждут 2–3 разных точки (почти готово к оценке API).

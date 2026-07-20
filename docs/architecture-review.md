@@ -27,9 +27,9 @@
 
 Если для нового Plugin нужно менять Agent, ConversationEngine, ToolManager или
 другую центральную часть ядра (а не только `container.py` и сам Plugin),
-модель расширения нарушена. Подтверждено Plugin → Tool (`EchoPlugin`); другие
-точки регистрации (ContextLayer, DocumentExtractor, …) ещё предстоит доказать
-тем же инвариантом — без PluginLoader до появления 2–3 разных типов.
+модель расширения нарушена. Подтверждено двумя осями: Plugin → Tool
+(`EchoPlugin`) и Plugin → ContextLayer (`CurrentTimePlugin`). Третья точка
+(например DocumentExtractor) ещё предстоит; PluginLoader — не раньше.
 
 ## Статус абстракций (по фактам кода)
 
