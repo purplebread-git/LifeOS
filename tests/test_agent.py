@@ -70,6 +70,21 @@ async def test_conversation_history_accumulates_across_calls() -> None:
     assert len(conversation.messages) == 4  # user, assistant, user, assistant
 
 
+async def test_stream_respond_saves_conversation() -> None:
+    agent, llm_provider, repository = _build_agent()
+
+    tokens: list[str] = []
+    async for token in agent.stream_respond(conversation_id="conv-stream", user_input="Привет"):
+        tokens.append(token)
+
+    assert tokens == ["Ответ #1"]
+    conversation = await repository.load("conv-stream")
+    assert len(conversation.messages) == 2
+    assert conversation.messages[0].role == Role.USER
+    assert conversation.messages[1].role == Role.ASSISTANT
+    assert llm_provider.received_message_counts == [1]
+
+
 async def test_different_conversation_ids_are_isolated() -> None:
     agent, llm_provider, _ = _build_agent()
 
