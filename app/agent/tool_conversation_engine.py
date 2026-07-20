@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+
 from app.core.context_builder import ContextBuilder
 from app.core.conversation_engine import ConversationEngine
 from app.core.execution_context import ExecutionContext
@@ -9,7 +11,7 @@ from app.core.memory_provider import MemoryProvider
 from app.core.tool_manager import ToolManager
 from app.knowledge.document_ingestion_service import DocumentIngestionService
 from app.models.conversation import Conversation
-from app.models.message import Message, Role
+from app.models.message import Message, Role, TextBlock
 from app.models.tool import ToolResult
 
 MAX_TOOL_ITERATIONS = 5
@@ -71,6 +73,26 @@ class ToolConversationEngine(ConversationEngine):
                 )
 
         return conversation.messages[-1]
+
+    async def stream_turn(
+        self,
+        conversation: Conversation,
+        user_message: Message,
+    ) -> AsyncIterator[str]:
+        """Текстовый stream без tool loop. Streaming tool calls — отдельный PR."""
+        conversation.messages.append(user_message)
+
+        context = await self._context_builder.build(conversation)
+        parts: list[str] = []
+        async for token in self._llm_provider.stream(context):
+            parts.append(token)
+            yield token
+
+        assistant_message = Message(
+            role=Role.ASSISTANT,
+            content=[TextBlock(text="".join(parts))],
+        )
+        conversation.messages.append(assistant_message)
 
     @staticmethod
     def _tool_result_to_message(result: ToolResult) -> Message:

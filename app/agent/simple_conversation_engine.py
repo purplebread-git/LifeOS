@@ -1,21 +1,22 @@
 """SimpleConversationEngine — логика одного шага диалога без tool calling.
 
-ВАЖНО: run_turn() мутирует переданный объект Conversation — добавляет в
-conversation.messages и сообщение пользователя, и ответ модели. Сохранение
-изменений в хранилище — не забота этого класса, этим занимается Agent
-через ConversationRepository.save().
+ВАЖНО: run_turn() / stream_turn() мутируют переданный объект Conversation —
+добавляют в conversation.messages и сообщение пользователя, и ответ модели.
+Сохранение изменений в хранилище — не забота этого класса, этим занимается
+Agent через ConversationRepository.save().
 
-Цикл вызова инструментов появится в отдельной реализации, когда будет
-ToolManager — контракт ConversationEngine.run_turn() уже готов к этому.
+Цикл вызова инструментов — в ToolConversationEngine.
 """
 
 from __future__ import annotations
+
+from collections.abc import AsyncIterator
 
 from app.core.context_builder import ContextBuilder
 from app.core.conversation_engine import ConversationEngine
 from app.core.llm_provider import LLMProvider
 from app.models.conversation import Conversation
-from app.models.message import Message
+from app.models.message import Message, Role, TextBlock
 
 
 class SimpleConversationEngine(ConversationEngine):
@@ -33,3 +34,22 @@ class SimpleConversationEngine(ConversationEngine):
         conversation.messages.append(response.message)
 
         return response.message
+
+    async def stream_turn(
+        self,
+        conversation: Conversation,
+        user_message: Message,
+    ) -> AsyncIterator[str]:
+        conversation.messages.append(user_message)
+
+        context = await self._context_builder.build(conversation)
+        parts: list[str] = []
+        async for token in self._llm_provider.stream(context):
+            parts.append(token)
+            yield token
+
+        assistant_message = Message(
+            role=Role.ASSISTANT,
+            content=[TextBlock(text="".join(parts))],
+        )
+        conversation.messages.append(assistant_message)

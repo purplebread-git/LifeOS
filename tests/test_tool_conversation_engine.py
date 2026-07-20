@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterator
 from typing import Any
 
 from app.agent import SimpleContextBuilder
@@ -80,6 +81,13 @@ class ToolCallingLLMProvider(LLMProvider):
             finish_reason="stop",
         )
 
+    async def stream(
+        self,
+        messages: list[Message],
+        tools: list[ToolDefinition] | None = None,
+    ) -> AsyncIterator[str]:
+        yield "done"
+
 
 class SimpleLLMProvider(LLMProvider):
     async def generate(
@@ -96,6 +104,13 @@ class SimpleLLMProvider(LLMProvider):
             ),
             finish_reason="stop",
         )
+
+    async def stream(
+        self,
+        messages: list[Message],
+        tools: list[ToolDefinition] | None = None,
+    ) -> AsyncIterator[str]:
+        yield "done"
 
 
 class InfiniteToolLLMProvider(LLMProvider):
@@ -123,6 +138,13 @@ class InfiniteToolLLMProvider(LLMProvider):
             ),
             finish_reason="tool_calls",
         )
+
+    async def stream(
+        self,
+        messages: list[Message],
+        tools: list[ToolDefinition] | None = None,
+    ) -> AsyncIterator[str]:
+        yield ""
 
 
 async def test_tool_execution_loop() -> None:
