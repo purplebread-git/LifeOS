@@ -308,11 +308,14 @@ MCP → Multi-Agent → Web UI.
 * Minimal CLI ✅ — `lifeos chat` для dogfooding.
 * Dogfooding fixes / cancellation / observability — по реальной боли.
 
-### Режим разработки (после #36)
+### Режим разработки (после #37)
 
-Инфраструктурный фундамент v1 завершён. Приоритет: **Dogfooding →
-Observability → MCP → Multi-Agent**. Критерий успеха — удобство реальных
-задач, а не чистота абстракций.
+**Milestone:** первая версия достаточно зрелая для ежедневного использования.
+Эпохи проекта и правила dogfooding — `docs/dogfooding.md`.
+
+Критерий успеха: не только зелёные тесты, а «прожил рабочий день внутри
+LifeOS». Приоритет: **Dogfooding → Observability → MCP → Multi-Agent** (по
+боли). Крупный roadmap не раньше 2–4 недель активного использования.
 ### Core extensions (не блокируют Phase 2)
 * Memory: recency / hybrid / MMR; rebuild_embeddings; query builder
 * Context: Token Budget / Trimming / Composer — когда слоёв станет больше
