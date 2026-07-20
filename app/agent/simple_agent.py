@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+
 from app.core.agent import Agent
 from app.core.conversation_engine import ConversationEngine
 from app.core.conversation_repository import ConversationRepository
@@ -36,3 +38,19 @@ class SimpleAgent(Agent):
         await self._conversation_repository.save(conversation)
 
         return AgentResponse(conversation_id=conversation_id, messages=[reply])
+
+    async def stream_respond(
+        self,
+        conversation_id: str,
+        user_input: str,
+    ) -> AsyncIterator[str]:
+        conversation = await self._conversation_repository.load(conversation_id)
+        user_message = Message(
+            role=Role.USER,
+            content=[TextBlock(text=user_input)],
+        )
+
+        async for token in self._conversation_engine.stream_turn(conversation, user_message):
+            yield token
+
+        await self._conversation_repository.save(conversation)

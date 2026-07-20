@@ -84,7 +84,9 @@ Storage → Retrieval → Ranking → Context → LLM.
       инвариант: joined stream == generate text; без tool-calls / SSE / cancel)
 - [x] Streaming + Tool Calling (`stream_turn` = тот же ReAct, что `run_turn`;
       наружу только текст; без tool events / SSE / cancel)
-- [ ] Streaming FastAPI endpoint (SSE/WebSocket)
+- [x] Streaming FastAPI SSE (`POST /v1/chat/stream`; только text `data:`;
+      без WebSocket / heartbeat / event types)
+- [ ] Minimal client (CLI или простой Web UI) — dogfooding
 - [ ] Stream cancellation
 - [ ] Observability
 
@@ -107,6 +109,7 @@ Storage → Retrieval → Ranking → Context → LLM.
 
 ## Next
 
-**Streaming FastAPI endpoint** (SSE/WebSocket) — транспорт к клиенту поверх
-уже доказанных `stream` / `stream_turn` (+ ReAct). Cancellation и observability —
-следующими отдельными PR.
+**Minimal client + dogfooding.** Streaming-архитектура доказана (один ReAct,
+два транспорта + SSE). Следующий фокус — пользоваться системой ежедневно и
+собирать требования из опыта, а не из архитектурных гипотез. Cancellation /
+Observability — после появления реальных болей.
