@@ -13,6 +13,7 @@ from typing import Protocol
 
 from app.container import Container
 from app.core.agent import Agent
+from app.core.exceptions import LLMError
 
 
 class _StreamingAgent(Protocol):
@@ -46,9 +47,14 @@ async def run_chat(
             break
 
         print_fn("lifeos> ", end="", flush=True)
-        async for token in agent.stream_respond(conversation_id, line):
-            print_fn(token, end="", flush=True)
-        print_fn()
+        try:
+            async for token in agent.stream_respond(conversation_id, line):
+                print_fn(token, end="", flush=True)
+            print_fn()
+        except LLMError as exc:
+            # Dogfooding: квота/сеть/таймаут не должны ронять весь CLI.
+            print_fn()
+            print_fn(f"error: {exc}")
 
 
 async def _chat_with_container(conversation_id: str) -> None:
