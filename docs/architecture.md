@@ -51,10 +51,14 @@ Application → Container → PluginManager → PluginRegistry → Plugin → (T
 * `PluginRegistry.all_registered_tools()` — только для composition root при
   сборке ToolManager (не для runtime Agent/Engine).
 
-Пока доказана одна точка расширения: Plugin → Tool (`EchoPlugin`).
+Пока доказаны две точки расширения:
+
+* Plugin → Tool (`EchoPlugin`)
+* Plugin → ContextLayer (`CurrentTimePlugin`)
+
 PluginLoader / auto-discovery / entry points сознательно не вводятся, пока не
-появятся 2–3 *разных* типа расширения (например Tool + ContextLayer +
-DocumentExtractor) — тогда станет ясно, чего не хватает API плагинов.
+появятся 2–3 *разных* типа расширения (следующий кандидат — DocumentExtractor) —
+тогда станет ясно, чего не хватает API плагинов.
 
 ### Memory
 * MemoryProvider (ABC)
@@ -242,9 +246,10 @@ MCP → Multi-Agent → Web UI.
 
 ### Phase 2 — Platform
 * Plugin lifecycle ✅ — `PluginManager` в Container Resource и FastAPI lifespan.
-* Plugin Contributed Tool ✅ — `EchoPlugin` регистрирует Tool через
-  `PluginRegistry`; composition root собирает `ToolManager` из core + plugin
-  tools. Agent / ConversationEngine / `SimpleToolManager` не менялись.
+* Plugin Contributed Tool ✅ — `EchoPlugin` → Tool через `PluginRegistry`.
+* Plugin Contributed ContextLayer ✅ — `CurrentTimePlugin` → ContextLayer;
+  composition root собирает ContextBuilder из core + plugin layers.
+  Agent / ConversationEngine / `LayeredContextBuilder` не менялись.
 * Streaming
 * Observability
 

@@ -25,6 +25,8 @@ from app.context import (
     SystemPromptLayer,
 )
 from app.conversation.in_memory_repository import InMemoryConversationRepository
+from app.core.knowledge_provider import KnowledgeProvider
+from app.core.memory_provider import MemoryProvider
 from app.core.plugin import Plugin
 from app.core.tool import Tool
 from app.knowledge.document_ingestion_service import DocumentIngestionService
@@ -42,6 +44,7 @@ from app.memory.semantic_sqlite_memory_provider import SemanticSqliteMemoryProvi
 from app.memory.sqlite_memory_provider import SqliteMemoryProvider
 from app.memory.threshold_memory_ranker import ThresholdMemoryRanker
 from app.persistence.database import init_database
+from app.plugins.current_time_plugin import CurrentTimePlugin
 from app.plugins.echo_plugin import EchoPlugin
 from app.plugins.manager import SimplePluginManager
 from app.plugins.registry import SimplePluginRegistry
@@ -85,6 +88,30 @@ def _build_tool_manager(
     """
     _ = plugin_manager
     return SimpleToolManager(tools=[*_core_tools(), *registry.all_registered_tools()])
+
+
+def _build_context_builder(
+    plugin_manager: SimplePluginManager,
+    registry: SimplePluginRegistry,
+    memory_provider: MemoryProvider,
+    knowledge_provider: KnowledgeProvider,
+) -> LayeredContextBuilder:
+    """Собирает ContextBuilder после старта плагинов.
+
+    Порядок слоёв — ответственность composition root. Plugin layers идут после
+    system prompt и до memory/knowledge: агентные «факты среды» раньше retrieval.
+    LayeredContextBuilder / Agent / Engine не меняются.
+    """
+    _ = plugin_manager
+    return LayeredContextBuilder(
+        layers=[
+            SystemPromptLayer(system_prompt=DEFAULT_SYSTEM_PROMPT),
+            *registry.all_registered_context_layers(),
+            MemoryContextLayer(memory_provider=memory_provider),
+            KnowledgeContextLayer(knowledge_provider=knowledge_provider),
+            ConversationHistoryLayer(),
+        ]
+    )
 
 
 def _memory_provider_key(settings: Settings) -> str:
@@ -140,8 +167,10 @@ class Container(containers.DeclarativeContainer):
     config = providers.Singleton(get_settings)
 
     # Список плагинов задаётся composition root'ом. Discovery / entry points /
-    # hot reload — следующие PR; сейчас — явный список с первым реальным плагином.
-    plugins: providers.Provider[list[Plugin]] = providers.Object([EchoPlugin()])
+    # hot reload — следующие PR; сейчас — явный список реальных плагинов.
+    plugins: providers.Provider[list[Plugin]] = providers.Object(
+        [EchoPlugin(), CurrentTimePlugin()]
+    )
 
     openai_api_key = providers.Callable(_unwrap_secret, config.provided.openai_api_key)
 
@@ -275,16 +304,14 @@ class Container(containers.DeclarativeContainer):
         registry=plugin_registry,
     )
 
-    # Context System: порядок слоёв задаётся здесь. Добавление нового слоя
-    # (например, Knowledge/RAG) не меняет LayeredContextBuilder.
+    # Core layers + layers от плагинов. Зависит от plugin_manager, чтобы
+    # register() успел заполнить registry. Порядок — здесь, не в builder.
     context_builder = providers.Singleton(
-        LayeredContextBuilder,
-        layers=providers.List(
-            providers.Singleton(SystemPromptLayer, system_prompt=DEFAULT_SYSTEM_PROMPT),
-            providers.Singleton(MemoryContextLayer, memory_provider=memory_provider),
-            providers.Singleton(KnowledgeContextLayer, knowledge_provider=knowledge_provider),
-            providers.Singleton(ConversationHistoryLayer),
-        ),
+        _build_context_builder,
+        plugin_manager=plugin_manager,
+        registry=plugin_registry,
+        memory_provider=memory_provider,
+        knowledge_provider=knowledge_provider,
     )
 
     conversation_engine = providers.Singleton(
