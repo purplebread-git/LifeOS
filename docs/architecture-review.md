@@ -28,8 +28,9 @@
 Если для нового Plugin нужно менять Agent, ConversationEngine, ToolManager или
 другую центральную часть ядра (а не только `container.py` и сам Plugin),
 модель расширения нарушена. Подтверждено двумя осями: Plugin → Tool
-(`EchoPlugin`) и Plugin → ContextLayer (`CurrentTimePlugin`). Третья точка
-(например DocumentExtractor) ещё предстоит; PluginLoader — не раньше.
+(`EchoPlugin`) и Plugin → ContextLayer (`CurrentTimePlugin`). Аудит API:
+`docs/plugin-api-review.md` — достаточно для третьей оси без loader/generic
+registry; инфраструктурный PR до третьей оси не нужен.
 
 ## Статус абстракций (по фактам кода)
 
@@ -57,8 +58,9 @@
 | `ToolManager` | движок/агент не знают набор инструментов |
 | `ConversationRepository` | агент не знает способ хранения |
 
-Наблюдать (одна реализация, ближе к спекулятивным): `Agent`,
-`PluginManager` / `PluginRegistry` (плагинов ещё нет).
+Наблюдать (одна реализация, ближе к спекулятивным): `Agent`.
+`PluginManager` / `PluginRegistry` после #27–#30 — подтверждённый runtime
+(+ две оси расширения); детали — `docs/plugin-api-review.md`.
 
 Оговорка про `ContextLayer`: реализаций четыре, но **все они producer'ы**
 (`return [*context, *mine]`). Дополнительная обобщённость `apply(...)` —
