@@ -57,6 +57,11 @@ Application → Container → PluginManager → PluginRegistry → Plugin → (T
 * Plugin → ContextLayer (`CurrentTimePlugin`)
 * Plugin → DocumentExtractor (`UppercaseTextPlugin`, `.upper`)
 
+**Plugin API Status:** Proven for Tool, ContextLayer and DocumentExtractor.
+Further evolution requires new extension categories or demonstrated limitations
+of the current API. (Нет PluginLoader / generic `register(...)` — сознательно,
+не упущение; см. `docs/plugin-api-review.md`.)
+
 Аудит API: `docs/plugin-api-review.md`. После трёх осей PluginLoader / generic
 registry по-прежнему не вводятся без нового факта.
 
@@ -265,6 +270,7 @@ MCP → Multi-Agent → Web UI.
   третьей оси без инфраструктурного PR).
 * Plugin → DocumentExtractor ✅ — `UppercaseTextPlugin` (`.upper`); три оси;
   Echo/CurrentTime не менялись; ExtractorRegistry/Ingestion без правок под плагин.
+* Plugin API frozen until new evidence ✅ — не ищем четвёртую ось искусственно.
 * Streaming
 * Observability
 
