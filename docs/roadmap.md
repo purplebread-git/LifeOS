@@ -68,7 +68,9 @@ Storage → Retrieval → Ranking → Context → LLM.
 - [x] Plugin lifecycle in runtime (`PluginManager` как Container Resource;
       FastAPI lifespan → `init_resources` / `shutdown_resources`;
       acceptance: FakePlugin получает register / startup / shutdown)
-- [ ] First real plugin (расширение без изменения ядра)
+- [x] Plugin Contributed Tool (EchoPlugin регистрирует `echo`; ToolManager
+      собирается в composition root из core tools + PluginRegistry;
+      Agent / ConversationEngine / ToolManager не менялись)
 - [ ] Streaming
 - [ ] Observability
 
@@ -90,7 +92,6 @@ Storage → Retrieval → Ranking → Context → LLM.
 
 ## Next
 
-**First real plugin** — следующий шаг Phase 2. Lifecycle уже в runtime;
-нужен один плагин, который расширяет систему без изменения ядра
-(Agent / ConversationEngine / ToolManager). Streaming и Observability —
-после стабилизации модели расширения.
+**Streaming** — следующий крупный шаг Phase 2. Модель расширения плагинами
+доказана (lifecycle + contributed Tool). Discovery / entry points / внешние
+пакеты — позже, когда появятся 2–3 реальных плагина.
