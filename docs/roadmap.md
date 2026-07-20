@@ -80,8 +80,13 @@ Storage → Retrieval → Ranking → Context → LLM.
       Echo/CurrentTime не менялись; ExtractorRegistry/Ingestion/Agent — нет)
 - [x] Plugin API frozen until new evidence (три оси достаточны; четвёртую
       искусственно не ищем; loader/generic register не трогаем)
-- [ ] Streaming
+- [x] LLM Streaming MVP (`LLMProvider.stream` + `ConversationEngine.stream_turn`;
+      инвариант: joined stream == generate text; без tool-calls / SSE / cancel)
+- [ ] Streaming Tool Calls
+- [ ] Streaming FastAPI endpoint (SSE/WebSocket)
+- [ ] Stream cancellation
 - [ ] Observability
+
 
 ## Phase 3 — Connectivity
 
@@ -101,7 +106,6 @@ Storage → Retrieval → Ranking → Context → LLM.
 
 ## Next
 
-**Streaming** — следующий крупный шаг Phase 2. Цикл подтверждения платформы
-(PR #27–#32) закрыт: Plugin API proven / frozen until new evidence. Streaming
-проверяет другую ось (LLM → stream → ConversationEngine → client) и почти не
-пересекается с Plugin API.
+**Streaming Tool Calls** или **Streaming FastAPI endpoint** — следующие итерации
+поверх уже доказанного транспорта. MVP: `stream` / `stream_turn` меняют только
+доставку; `run_turn` / tool loop / memory / context не затронуты.

@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterator
 from typing import cast
 
 from app.agent import SimpleAgent, SimpleContextBuilder, SimpleConversationEngine
@@ -28,6 +29,16 @@ class _RecordingLLMProvider(LLMProvider):
             ),
             finish_reason="stop",
         )
+
+    async def stream(
+        self,
+        messages: list[Message],
+        tools: list[ToolDefinition] | None = None,
+    ) -> AsyncIterator[str]:
+        response = await self.generate(messages, tools)
+        block = response.message.content[0]
+        assert isinstance(block, TextBlock)
+        yield block.text
 
 
 def _build_agent() -> tuple[SimpleAgent, _RecordingLLMProvider, InMemoryConversationRepository]:

@@ -9,6 +9,7 @@ Conversation — форматом OpenAI-совместимых типов уп�
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from typing import Any, cast
 
 from openai import (
@@ -55,6 +56,36 @@ class OpenAIClient:
                 )
 
             return response
+
+        except APITimeoutError as exc:
+            raise LLMTimeoutError(f"OpenAI request timed out after {self._timeout}s") from exc
+        except RateLimitError as exc:
+            raise LLMRateLimitError("OpenAI rate limit exceeded") from exc
+        except APIConnectionError as exc:
+            raise LLMConnectionError("Failed to connect to OpenAI API") from exc
+        except APIStatusError as exc:
+            raise LLMError(
+                f"OpenAI API returned an error (status {exc.status_code}): {exc.message}"
+            ) from exc
+
+    async def chat_stream(
+        self,
+        model: str,
+        messages: list[OpenAIMessage],
+    ) -> AsyncIterator[str]:
+        """Поток текстовых дельт chat completion (stream=True, без tools)."""
+        try:
+            stream = await self._client.chat.completions.create(
+                model=model,
+                messages=cast(Any, messages),
+                stream=True,
+            )
+            async for chunk in stream:
+                if not chunk.choices:
+                    continue
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    yield delta
 
         except APITimeoutError as exc:
             raise LLMTimeoutError(f"OpenAI request timed out after {self._timeout}s") from exc
