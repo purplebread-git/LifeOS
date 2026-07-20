@@ -229,3 +229,77 @@ async def test_max_tool_iterations_limit() -> None:
     )
 
     assert provider.calls == MAX_TOOL_ITERATIONS
+
+
+async def test_stream_turn_runs_react_and_yields_only_text() -> None:
+    # ReAct в стриме: tool rounds молчат, наружу только финальный текст.
+    run_engine = ToolConversationEngine(
+        llm_provider=ToolCallingLLMProvider(),
+        context_builder=SimpleContextBuilder(),
+        tool_manager=SimpleToolManager(tools=[EchoTool()]),
+    )
+    stream_engine = ToolConversationEngine(
+        llm_provider=ToolCallingLLMProvider(),
+        context_builder=SimpleContextBuilder(),
+        tool_manager=SimpleToolManager(tools=[EchoTool()]),
+    )
+
+    run_conversation = Conversation(conversation_id="c-run")
+    await run_engine.run_turn(
+        run_conversation,
+        Message(role=Role.USER, content=[TextBlock(text="hi")]),
+    )
+
+    stream_conversation = Conversation(conversation_id="c-stream")
+    tokens: list[str] = []
+    async for token in stream_engine.stream_turn(
+        stream_conversation,
+        Message(role=Role.USER, content=[TextBlock(text="hi")]),
+    ):
+        tokens.append(token)
+
+    assert tokens == ["done"]
+
+    # Та же структура истории, что у run_turn (USER, ASSISTANT+tools, TOOL, ASSISTANT).
+    assert [message.role for message in stream_conversation.messages] == [
+        message.role for message in run_conversation.messages
+    ]
+    assert len(stream_conversation.messages) == 4
+    assert stream_conversation.messages[1].tool_calls
+    assert stream_conversation.messages[2].role == Role.TOOL
+    final = stream_conversation.messages[3].content[0]
+    assert isinstance(final, TextBlock)
+    assert final.text == "done"
+
+
+async def test_stream_turn_without_tools_matches_run_turn_text() -> None:
+    provider = SimpleLLMProvider()
+    engine = ToolConversationEngine(
+        llm_provider=provider,
+        context_builder=SimpleContextBuilder(),
+        tool_manager=SimpleToolManager(tools=[]),
+    )
+
+    run_conversation = Conversation(conversation_id="c-run")
+    run_message = await engine.run_turn(
+        run_conversation,
+        Message(role=Role.USER, content=[TextBlock(text="hi")]),
+    )
+
+    stream_conversation = Conversation(conversation_id="c-stream")
+    streamed = "".join(
+        [
+            token
+            async for token in engine.stream_turn(
+                stream_conversation,
+                Message(role=Role.USER, content=[TextBlock(text="hi")]),
+            )
+        ]
+    )
+
+    run_block = run_message.content[0]
+    assert isinstance(run_block, TextBlock)
+    assert streamed == run_block.text
+    assert [message.role for message in stream_conversation.messages] == [
+        message.role for message in run_conversation.messages
+    ]
