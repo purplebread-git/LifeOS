@@ -209,28 +209,24 @@ LLMProvider.generate()
 
 ## Следующие направления
 
-### Memory
-* Ranking-стратегии: recency / dedup / hybrid weighting / MMR (новый MemoryRanker)
-* rebuild_embeddings() — reindex при смене embedding-модели или после сбоя
-* Memory Search Query Builder — извлечение search query из мультимодальных сообщений (TextBlock + будущие ImageBlock и др.)
+Phase 1 (Core Runtime) завершена. Дальше — фазы поверх платформы
+(см. `docs/roadmap.md`). Приоритет: Plugins → Streaming → Observability →
+MCP → Multi-Agent → Web UI.
 
-### Context System
-* Token Budget
-* Context Trimming
-
-### Knowledge (RAG)
-* Extractors: Markdown / PDF / DOCX / HTML / RemoteUrl (адаптер за DocumentExtractor)
-* Knowledge Management Tools (agent-facing ingest/list/delete)
-* Chunking-стратегии: sentence / paragraph / recursive / token / semantic
-* Ranking-стратегии: recency / MMR / citation weight / source priority
-
-### Platform
-* Plugins (реальные интеграции)
+### Phase 2 — Platform
+* Plugins (реальные интеграции поверх существующего скелета Plugin/Registry/Manager)
 * Streaming
 * Observability
-* MCP
-* Multi-agent
-* Web UI
+
+### Core extensions (не блокируют Phase 2)
+* Memory: recency / hybrid / MMR; rebuild_embeddings; query builder
+* Context: Token Budget / Trimming / Composer — когда слоёв станет больше
+* Knowledge: DOCX / HTML / RemoteUrl; chunking-стратегии; ranking-расширения
+
+### Позже
+* Connectivity: MCP / External Services / Integrations
+* Intelligence: Multi-Agent / Planning / Long-running Tasks
+* UX: Web UI
 
 ⸻
 

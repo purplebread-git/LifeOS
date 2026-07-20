@@ -1,12 +1,20 @@
 # Roadmap
 
-Организован по зрелости системы (Core / Capabilities / Platform), а не по
-последовательности разработки — так он отражает архитектуру продукта.
+Phase 1 (Core Runtime) завершена. Ядро больше не «строится» — оно стало
+платформой. Дальнейшие пункты — возможности поверх стабильного фундамента,
+а не архитектурные рефакторинги «на всякий случай».
 
-Общий паттерн: `Infrastructure → Capability → Tool → Agent`. Агент работает
-только с capabilities через инструменты; инфраструктура скрыта.
+Общий паттерн ядра: `Infrastructure → Capability → Tool → Agent`.
+Принципы абстракций: `docs/architecture-review.md`
+(вариативность **или** DIP; обобщать после трёх реальных потребителей).
 
-## Core
+Приоритет Phase 2+: Plugins → Streaming → Observability → MCP →
+Multi-Agent → Web UI.
+
+## Phase 1 — Core Runtime ✅
+
+Цельное ядро: Foundation → Conversation/Tools → Context → Memory →
+Knowledge → Document Ingestion → Architecture Review.
 
 ### Foundation
 - [x] Core interfaces (ABC)
@@ -20,58 +28,64 @@
 - [x] Tool Interface / ToolManager
 - [x] ExecutionContext (реестр capabilities)
 - [x] ReAct Loop / ToolConversationEngine
+- [x] Tool Call Correlation (`tool_call_id` штампует менеджер, не инструмент)
 
 ### Context System
 - [x] ContextLayer (pipeline contract)
 - [x] Layered ContextBuilder (System / Memory / Knowledge / Conversation)
-- [ ] Context Composer (порядок / бюджет токенов / приоритеты — когда слоёв станет больше)
+- [ ] Context Composer (когда слоёв станет больше — Phase 2+ по необходимости)
 - [ ] Token Budget / Context Trimming
 
 ### Memory
-Полная цепочка: Storage → Retrieval → Ranking → Context → LLM.
-- [x] Memory Storage (MemoryProvider ABC, InMemoryMemoryProvider, MemoryEntry)
-- [x] Memory Context Integration (автоинъекция в LLM-контекст)
-- [x] Persistent Memory (SqliteMemoryProvider)
-- [x] Semantic Retrieval (SemanticSqliteMemoryProvider + EmbeddingProvider)
-- [x] Memory Ranking (MemoryRanker + ThresholdMemoryRanker)
+Storage → Retrieval → Ranking → Context → LLM.
+- [x] Memory Storage / Context Integration / Persistent / Semantic / Ranking
 
 ### Knowledge
-Строится по схеме памяти: Storage → Retrieval → Ranking → Context. Доменная
-модель организована вокруг `source`.
-- [x] KnowledgeProvider (ABC: add / add_batch / search / list_sources / delete_source)
-- [x] KnowledgeChunk (доменная модель, отдельная от MemoryEntry)
-- [x] InMemoryKnowledgeProvider (substring, retrieval MVP)
-- [x] KnowledgeContextLayer (Knowledge → Context → LLM)
-- [x] Persistent Knowledge (SqliteKnowledgeProvider + KnowledgeRecord)
-- [x] Semantic Knowledge Retrieval (SemanticSqliteKnowledgeProvider, embeddings + cosine)
-- [x] Knowledge Ranking (KnowledgeRanker + ThresholdKnowledgeRanker)
-- [x] Chunking Engine (Chunker ABC + FixedSizeChunker)
-- [x] Document Ingestion (DocumentExtractor ABC + PlainTextExtractor + DocumentIngestionService)
-- [x] Knowledge Source Management (list_sources / delete_source — доменная модель вокруг source завершена)
-- [x] Extractor Routing (ExtractorRegistry: extension → extractor, default PlainText; сервис-инвариант)
-- [x] MarkdownExtractor (markdown-it-py + собственный обход токенов, .md/.markdown) — доказательство горизонтального расширения
-- [x] PdfExtractor (pypdf, встроенный текст, без OCR, .pdf) — расширение проверено на бинарном формате
+Зеркальная схема памяти; доменная модель вокруг `source`.
+- [x] KnowledgeProvider + KnowledgeChunk + Context Layer
+- [x] Persistent / Semantic / Ranking
+- [x] Chunking + Document Ingestion + Source Management
+- [x] Extractor Routing (ExtractorRegistry)
+- [x] PlainText / Markdown / PDF Extractors
 
-## Capabilities
-Возможности агента, открытые через инструменты (Tool → Capability).
-- [x] Memory Tools (RememberTool, SearchMemoryTool)
-- [x] Knowledge Tools (IngestDocumentTool, SearchKnowledgeTool) — Knowledge MVP замкнут
-- [x] Knowledge Source Tools (ListSourcesTool, DeleteSourceTool)
-- [x] MarkdownExtractor (.md / .markdown) — подключён чистым адаптером + записью в реестре
-- [x] PdfExtractor (.pdf) — первый бинарный формат, подключён так же (регистрация в реестре)
-- [ ] Анализ повторяемости extractor'ов (после трёх реализаций: есть ли BaseExtractor / общие утилиты)
-- [ ] Additional Extractors (DOCX / HTML / RemoteUrl — чистый адаптер + запись в реестре)
+### Capabilities (agent-facing)
+- [x] Memory Tools / Knowledge Tools / Source Tools
 
-### Extensions (расширения поверх готового ядра, не обязательные этапы)
-- [ ] Memory: Recency / Hybrid / MMR / LLM Reranker; Maintenance (rebuild_embeddings, dedup)
-- [ ] Knowledge: Chunking-стратегии (sentence / paragraph / recursive / token / semantic)
-- [ ] Knowledge Ranking: recency / MMR / citation weight / source priority
-- [ ] Knowledge Management: statistics / rename / update (расширение доменной модели)
+### Architecture Review
+- [x] `docs/architecture-review.md` — принципы и статус абстракций
 
-## Platform
-- [ ] Plugins
+### Core extensions (опционально, не блокируют Phase 2)
+- [ ] Extractor analysis / DOCX / HTML / RemoteUrl
+- [ ] Memory: Recency / Hybrid / MMR / Maintenance
+- [ ] Knowledge: chunking-стратегии, ranking-расширения, statistics/rename
+
+## Phase 2 — Platform
+
+Модель расширения поверх стабильного ядра. Скелет уже есть
+(`Plugin` / `PluginRegistry` / `PluginManager` / `SimplePluginManager`) —
+нужны реальные интеграции и wiring, а не новые абстракции «впрок».
+
+- [ ] Plugins (первый приоритет Phase 2)
 - [ ] Streaming
 - [ ] Observability
+
+## Phase 3 — Connectivity
+
 - [ ] MCP
+- [ ] External Services
+- [ ] Integrations
+
+## Phase 4 — Intelligence
+
 - [ ] Multi-Agent / Agent Registry / Task Delegation
+- [ ] Planning
+- [ ] Long-running Tasks
+
+## Phase 5 — User Experience
+
 - [ ] Web UI
+
+## Next
+
+**Plugins** — точка входа в Phase 2. Streaming и Observability строятся уже
+поверх стабильной модели расширения, а не наоборот.
