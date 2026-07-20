@@ -37,8 +37,8 @@ PluginLoader, универсального `register(...)` — каждый ра
 Если для нового Plugin нужно менять Agent, ConversationEngine, ToolManager или
 другую центральную часть ядра (а не только `container.py` и сам Plugin),
 модель расширения нарушена. Подтверждено тремя осями: Tool, ContextLayer,
-DocumentExtractor. Аудит API: `docs/plugin-api-review.md`. PluginLoader —
-только при новых фактах.
+DocumentExtractor. **Plugin API Status: Proven … frozen until new evidence**
+(см. `docs/plugin-api-review.md`). PluginLoader — только при новых фактах.
 
 ## Статус абстракций (по фактам кода)
 

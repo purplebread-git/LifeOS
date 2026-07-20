@@ -78,6 +78,8 @@ Storage → Retrieval → Ranking → Context → LLM.
       третьей оси; loader/generic registry не нужны пока)
 - [x] Plugin → DocumentExtractor (UppercaseTextPlugin / `.upper`; три оси;
       Echo/CurrentTime не менялись; ExtractorRegistry/Ingestion/Agent — нет)
+- [x] Plugin API frozen until new evidence (три оси достаточны; четвёртую
+      искусственно не ищем; loader/generic register не трогаем)
 - [ ] Streaming
 - [ ] Observability
 
@@ -99,6 +101,7 @@ Storage → Retrieval → Ranking → Context → LLM.
 
 ## Next
 
-**Оценка после трёх осей:** нужен ли ещё принципиально другой тип расширения?
-Если нет — Plugin API можно считать закрытым до новых фактов (не навсегда).
-Streaming — следующий крупный шаг Phase 2. PluginLoader по-прежнему не нужен.
+**Streaming** — следующий крупный шаг Phase 2. Цикл подтверждения платформы
+(PR #27–#32) закрыт: Plugin API proven / frozen until new evidence. Streaming
+проверяет другую ось (LLM → stream → ConversationEngine → client) и почти не
+пересекается с Plugin API.
