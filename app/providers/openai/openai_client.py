@@ -31,6 +31,18 @@ from app.core.exceptions import (
 from app.providers.openai.types import OpenAIMessage, OpenAIToolDef
 
 
+def _rate_limit_message(exc: object) -> str:
+    """RateLimitError у OpenAI покрывает и RPM, и insufficient_quota."""
+    body = str(exc)
+    code = getattr(exc, "code", None)
+    if code == "insufficient_quota" or "insufficient_quota" in body:
+        return (
+            "OpenAI quota exceeded — check billing/credits at "
+            "https://platform.openai.com/settings/organization/billing"
+        )
+    return "OpenAI rate limit exceeded — wait a moment and try again"
+
+
 class OpenAIClient:
     def __init__(self, api_key: str, timeout: float = 60.0) -> None:
         self._timeout = timeout
@@ -60,7 +72,7 @@ class OpenAIClient:
         except APITimeoutError as exc:
             raise LLMTimeoutError(f"OpenAI request timed out after {self._timeout}s") from exc
         except RateLimitError as exc:
-            raise LLMRateLimitError("OpenAI rate limit exceeded") from exc
+            raise LLMRateLimitError(_rate_limit_message(exc)) from exc
         except APIConnectionError as exc:
             raise LLMConnectionError("Failed to connect to OpenAI API") from exc
         except APIStatusError as exc:
@@ -90,7 +102,7 @@ class OpenAIClient:
         except APITimeoutError as exc:
             raise LLMTimeoutError(f"OpenAI request timed out after {self._timeout}s") from exc
         except RateLimitError as exc:
-            raise LLMRateLimitError("OpenAI rate limit exceeded") from exc
+            raise LLMRateLimitError(_rate_limit_message(exc)) from exc
         except APIConnectionError as exc:
             raise LLMConnectionError("Failed to connect to OpenAI API") from exc
         except APIStatusError as exc:
