@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from app.core.context_layer import ContextLayer
+from app.core.document_extractor import DocumentExtractor
 from app.core.tool import Tool
 
 
@@ -8,8 +9,9 @@ class PluginRegistry(ABC):
     """Собирает регистрации плагинов при старте (write-side).
 
     all_registered_*() предназначены ИСКЛЮЧИТЕЛЬНО для composition root
-    при сборке ToolManager / ContextBuilder. Agent/ConversationEngine никогда
-    не обращаются к PluginRegistry напрямую в рантайме.
+    при сборке ToolManager / ContextBuilder / ExtractorRegistry.
+    Agent/ConversationEngine никогда не обращаются к PluginRegistry напрямую
+    в рантайме.
     """
 
     @abstractmethod
@@ -26,4 +28,16 @@ class PluginRegistry(ABC):
 
     @abstractmethod
     def all_registered_context_layers(self) -> list[ContextLayer]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def register_document_extractor(
+        self,
+        extension: str,
+        extractor: DocumentExtractor,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def all_registered_document_extractors(self) -> dict[str, DocumentExtractor]:
         raise NotImplementedError
