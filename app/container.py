@@ -26,6 +26,7 @@ from app.context import (
 )
 from app.conversation.in_memory_repository import InMemoryConversationRepository
 from app.core.plugin import Plugin
+from app.core.tool import Tool
 from app.knowledge.document_ingestion_service import DocumentIngestionService
 from app.knowledge.extractor_registry import ExtractorRegistry
 from app.knowledge.fixed_size_chunker import FixedSizeChunker
@@ -41,6 +42,7 @@ from app.memory.semantic_sqlite_memory_provider import SemanticSqliteMemoryProvi
 from app.memory.sqlite_memory_provider import SqliteMemoryProvider
 from app.memory.threshold_memory_ranker import ThresholdMemoryRanker
 from app.persistence.database import init_database
+from app.plugins.echo_plugin import EchoPlugin
 from app.plugins.manager import SimplePluginManager
 from app.plugins.registry import SimplePluginRegistry
 from app.providers.openai import OpenAIClient, OpenAIEmbeddingProvider, OpenAIProvider
@@ -57,6 +59,32 @@ from app.tools.simple_tool_manager import SimpleToolManager
 
 def _unwrap_secret(secret: SecretStr) -> str:
     return secret.get_secret_value()
+
+
+def _core_tools() -> list[Tool]:
+    """Инструменты ядра (не плагины). Плагинные tools приходят из PluginRegistry."""
+    return [
+        RememberTool(),
+        SearchMemoryTool(),
+        IngestDocumentTool(),
+        SearchKnowledgeTool(),
+        ListSourcesTool(),
+        DeleteSourceTool(),
+    ]
+
+
+def _build_tool_manager(
+    plugin_manager: SimplePluginManager,
+    registry: SimplePluginRegistry,
+) -> SimpleToolManager:
+    """Собирает ToolManager после старта плагинов.
+
+    Зависимость от plugin_manager гарантирует порядок: register() уже вызван,
+    registry заполнен. Agent/Engine/ToolManager не знают про плагины —
+    расширение = запись в registry + этот composition-root wiring.
+    """
+    _ = plugin_manager
+    return SimpleToolManager(tools=[*_core_tools(), *registry.all_registered_tools()])
 
 
 def _memory_provider_key(settings: Settings) -> str:
@@ -112,8 +140,8 @@ class Container(containers.DeclarativeContainer):
     config = providers.Singleton(get_settings)
 
     # Список плагинов задаётся composition root'ом. Discovery / entry points /
-    # hot reload — следующие PR; сейчас достаточно явного списка (пока пустого).
-    plugins: providers.Provider[list[Plugin]] = providers.Object([])
+    # hot reload — следующие PR; сейчас — явный список с первым реальным плагином.
+    plugins: providers.Provider[list[Plugin]] = providers.Object([EchoPlugin()])
 
     openai_api_key = providers.Callable(_unwrap_secret, config.provided.openai_api_key)
 
@@ -238,16 +266,13 @@ class Container(containers.DeclarativeContainer):
         plugins=plugins,
         registry=plugin_registry,
     )
+
+    # Core tools + tools, зарегистрированные плагинами. Зависит от plugin_manager,
+    # чтобы register() успел заполнить registry до сборки ToolManager.
     tool_manager = providers.Singleton(
-        SimpleToolManager,
-        tools=[
-            RememberTool(),
-            SearchMemoryTool(),
-            IngestDocumentTool(),
-            SearchKnowledgeTool(),
-            ListSourcesTool(),
-            DeleteSourceTool(),
-        ],
+        _build_tool_manager,
+        plugin_manager=plugin_manager,
+        registry=plugin_registry,
     )
 
     # Context System: порядок слоёв задаётся здесь. Добавление нового слоя

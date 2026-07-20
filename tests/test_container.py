@@ -98,12 +98,13 @@ async def test_container_resolves_llm_provider_as_openai(container: Container) -
     assert isinstance(container.llm_provider(), LLMProvider)
 
 
-async def test_plugin_lifecycle_resolves_even_without_plugins(
+async def test_plugin_lifecycle_resolves_with_default_plugins(
     container: Container,
 ) -> None:
-    manager = container.plugin_manager()
+    manager = await container.plugin_manager()  # type: ignore[misc]
     registry = container.plugin_registry()
 
     assert manager is not None
     assert isinstance(registry, PluginRegistry)
-    assert registry.all_registered_tools() == []
+    # Composition root подключает EchoPlugin — registry не пуст.
+    assert "echo" in [tool.definition.name for tool in registry.all_registered_tools()]
