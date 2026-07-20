@@ -25,6 +25,7 @@ from app.context import (
     SystemPromptLayer,
 )
 from app.conversation.in_memory_repository import InMemoryConversationRepository
+from app.core.document_extractor import DocumentExtractor
 from app.core.knowledge_provider import KnowledgeProvider
 from app.core.memory_provider import MemoryProvider
 from app.core.plugin import Plugin
@@ -48,6 +49,7 @@ from app.plugins.current_time_plugin import CurrentTimePlugin
 from app.plugins.echo_plugin import EchoPlugin
 from app.plugins.manager import SimplePluginManager
 from app.plugins.registry import SimplePluginRegistry
+from app.plugins.uppercase_text_plugin import UppercaseTextPlugin
 from app.providers.openai import OpenAIClient, OpenAIEmbeddingProvider, OpenAIProvider
 from app.tools import (
     DeleteSourceTool,
@@ -74,6 +76,16 @@ def _core_tools() -> list[Tool]:
         ListSourcesTool(),
         DeleteSourceTool(),
     ]
+
+
+def _core_extractors() -> dict[str, DocumentExtractor]:
+    """Форматы ядра. Плагинные extractor'ы мержатся поверх в composition root."""
+    markdown = MarkdownExtractor()
+    return {
+        ".md": markdown,
+        ".markdown": markdown,
+        ".pdf": PdfExtractor(),
+    }
 
 
 def _build_tool_manager(
@@ -111,6 +123,25 @@ def _build_context_builder(
             KnowledgeContextLayer(knowledge_provider=knowledge_provider),
             ConversationHistoryLayer(),
         ]
+    )
+
+
+def _build_extractor_registry(
+    plugin_manager: SimplePluginManager,
+    registry: SimplePluginRegistry,
+) -> ExtractorRegistry:
+    """Собирает ExtractorRegistry после старта плагинов.
+
+    Core formats + plugin extractors. ExtractorRegistry / DocumentIngestionService
+    не знают про плагины — только получают готовый mapping из composition root.
+    """
+    _ = plugin_manager
+    return ExtractorRegistry(
+        default=PlainTextExtractor(),
+        extractors={
+            **_core_extractors(),
+            **registry.all_registered_document_extractors(),
+        },
     )
 
 
@@ -169,7 +200,7 @@ class Container(containers.DeclarativeContainer):
     # Список плагинов задаётся composition root'ом. Discovery / entry points /
     # hot reload — следующие PR; сейчас — явный список реальных плагинов.
     plugins: providers.Provider[list[Plugin]] = providers.Object(
-        [EchoPlugin(), CurrentTimePlugin()]
+        [EchoPlugin(), CurrentTimePlugin(), UppercaseTextPlugin()]
     )
 
     openai_api_key = providers.Callable(_unwrap_secret, config.provided.openai_api_key)
@@ -258,23 +289,22 @@ class Container(containers.DeclarativeContainer):
         semantic_sqlite=semantic_sqlite_knowledge_provider,
     )
 
-    # Ingestion pipeline: extractor (bytes→text) → chunker (text→chunks) →
-    # knowledge_provider.add_batch. Chunker с дефолтами (settings появятся, когда
-    # будет UI/CLI-потребитель тюнинга). Формат-роутинг живёт в ExtractorRegistry
-    # (по расширению source, default → PlainText); новый формат = запись в реестре
-    # + новый DocumentExtractor, без изменений DocumentIngestionService.
-    markdown_extractor = providers.Singleton(MarkdownExtractor)
+    conversation_repository = providers.Singleton(InMemoryConversationRepository)
 
+    plugin_registry = providers.Singleton(SimplePluginRegistry)
+
+    plugin_manager = providers.Resource(
+        _init_plugin_manager,
+        plugins=plugins,
+        registry=plugin_registry,
+    )
+
+    # Ingestion: ExtractorRegistry собирается после плагинов (core + plugin
+    # formats). DocumentIngestionService / ExtractorRegistry не знают про Plugin.
     extractor_registry = providers.Singleton(
-        ExtractorRegistry,
-        default=providers.Singleton(PlainTextExtractor),
-        extractors=providers.Dict(
-            {
-                ".md": markdown_extractor,
-                ".markdown": markdown_extractor,
-                ".pdf": providers.Singleton(PdfExtractor),
-            }
-        ),
+        _build_extractor_registry,
+        plugin_manager=plugin_manager,
+        registry=plugin_registry,
     )
 
     chunker = providers.Singleton(FixedSizeChunker)
@@ -284,16 +314,6 @@ class Container(containers.DeclarativeContainer):
         extractor_registry=extractor_registry,
         chunker=chunker,
         knowledge_provider=knowledge_provider,
-    )
-
-    conversation_repository = providers.Singleton(InMemoryConversationRepository)
-
-    plugin_registry = providers.Singleton(SimplePluginRegistry)
-
-    plugin_manager = providers.Resource(
-        _init_plugin_manager,
-        plugins=plugins,
-        registry=plugin_registry,
     )
 
     # Core tools + tools, зарегистрированные плагинами. Зависит от plugin_manager,

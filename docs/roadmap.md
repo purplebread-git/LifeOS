@@ -76,7 +76,8 @@ Storage → Retrieval → Ranking → Context → LLM.
       две оси: Tool и ContextLayer; ядро не менялось)
 - [x] Plugin API Review (`docs/plugin-api-review.md` — API достаточен для
       третьей оси; loader/generic registry не нужны пока)
-- [ ] Plugin → DocumentExtractor (третья ось; только после review)
+- [x] Plugin → DocumentExtractor (UppercaseTextPlugin / `.upper`; три оси;
+      Echo/CurrentTime не менялись; ExtractorRegistry/Ingestion/Agent — нет)
 - [ ] Streaming
 - [ ] Observability
 
@@ -98,7 +99,6 @@ Storage → Retrieval → Ranking → Context → LLM.
 
 ## Next
 
-**Третья ось расширения:** Plugin → DocumentExtractor (или иной кандидат),
-тем же инвариантом composition root. Plugin API по итогам
-`docs/plugin-api-review.md` достаточно для аддитивного расширения —
-без PluginLoader и без generic registry до появления фактов на третьей оси.
+**Оценка после трёх осей:** нужен ли ещё принципиально другой тип расширения?
+Если нет — Plugin API можно считать закрытым до новых фактов (не навсегда).
+Streaming — следующий крупный шаг Phase 2. PluginLoader по-прежнему не нужен.
