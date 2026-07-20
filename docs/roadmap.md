@@ -62,10 +62,13 @@ Storage → Retrieval → Ranking → Context → LLM.
 ## Phase 2 — Platform
 
 Модель расширения поверх стабильного ядра. Скелет уже есть
-(`Plugin` / `PluginRegistry` / `PluginManager` / `SimplePluginManager`) —
-нужны реальные интеграции и wiring, а не новые абстракции «впрок».
+(`Plugin` / `PluginRegistry` / `PluginManager` / `SimplePluginManager`).
+Сначала доказываем lifecycle, потом — первый реальный плагин.
 
-- [ ] Plugins (первый приоритет Phase 2)
+- [x] Plugin lifecycle in runtime (`PluginManager` как Container Resource;
+      FastAPI lifespan → `init_resources` / `shutdown_resources`;
+      acceptance: FakePlugin получает register / startup / shutdown)
+- [ ] First real plugin (расширение без изменения ядра)
 - [ ] Streaming
 - [ ] Observability
 
@@ -87,5 +90,7 @@ Storage → Retrieval → Ranking → Context → LLM.
 
 ## Next
 
-**Plugins** — точка входа в Phase 2. Streaming и Observability строятся уже
-поверх стабильной модели расширения, а не наоборот.
+**First real plugin** — следующий шаг Phase 2. Lifecycle уже в runtime;
+нужен один плагин, который расширяет систему без изменения ядра
+(Agent / ConversationEngine / ToolManager). Streaming и Observability —
+после стабилизации модели расширения.
