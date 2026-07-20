@@ -22,7 +22,8 @@ class LLMProvider(ABC):
     ) -> AsyncIterator[str]:
         """Поток текстовых дельт. Семантика ответа та же, что у generate().
 
-        Streaming меняет только способ доставки, не результат. tools в этом
-        контракте зарезервированы; поддержка streaming tool calls — отдельный PR.
+        Streaming — альтернативный транспорт результата, а не альтернативный
+        режим выполнения агента. Tool-aware ReAct в стриме живёт в
+        ConversationEngine.stream_turn (через generate), а не в этом методе.
         """
         raise NotImplementedError

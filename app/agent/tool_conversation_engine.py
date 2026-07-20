@@ -79,20 +79,47 @@ class ToolConversationEngine(ConversationEngine):
         conversation: Conversation,
         user_message: Message,
     ) -> AsyncIterator[str]:
-        """Текстовый stream без tool loop. Streaming tool calls — отдельный PR."""
+        """ReAct в режиме стрима: наружу только текстовые дельты.
+
+        Тот же цикл, что run_turn (generate + tools). Во время tool execution
+        поток молчит — без tool_start/tool_result наружу. Streaming меняет
+        только доставку текста, не семантику агента.
+        """
         conversation.messages.append(user_message)
 
-        context = await self._context_builder.build(conversation)
-        parts: list[str] = []
-        async for token in self._llm_provider.stream(context):
-            parts.append(token)
-            yield token
+        for _ in range(MAX_TOOL_ITERATIONS):
+            context = await self._context_builder.build(conversation)
 
-        assistant_message = Message(
-            role=Role.ASSISTANT,
-            content=[TextBlock(text="".join(parts))],
-        )
-        conversation.messages.append(assistant_message)
+            response = await self._llm_provider.generate(
+                context,
+                tools=self._tool_manager.tool_definitions(),
+            )
+
+            assistant_message = response.message
+            conversation.messages.append(assistant_message)
+
+            for block in assistant_message.content:
+                if isinstance(block, TextBlock) and block.text:
+                    yield block.text
+
+            if not assistant_message.tool_calls:
+                return
+
+            execution_context = ExecutionContext(
+                conversation_id=conversation.conversation_id,
+                memory=self._memory_provider,
+                knowledge=self._knowledge_provider,
+                ingestion=self._ingestion_service,
+            )
+
+            for tool_call in assistant_message.tool_calls:
+                result = await self._tool_manager.execute(
+                    tool_call,
+                    execution_context,
+                )
+                conversation.messages.append(
+                    self._tool_result_to_message(result),
+                )
 
     @staticmethod
     def _tool_result_to_message(result: ToolResult) -> Message:

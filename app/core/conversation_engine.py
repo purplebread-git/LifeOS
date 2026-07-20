@@ -16,9 +16,9 @@ class ConversationEngine(ABC):
         conversation: Conversation,
         user_message: Message,
     ) -> AsyncIterator[str]:
-        """Потоковый ход: те же side-effects на Conversation, что run_turn (для текста).
+        """Потоковый ход: те же side-effects на Conversation, что run_turn.
 
-        Streaming меняет только доставку токенов наружу. Tool-calling loop в
-        stream_turn пока не поддерживается (отдельный PR).
+        Streaming — альтернативный транспорт результата, а не альтернативный
+        режим выполнения агента. Наружу только текст; tool events не стримятся.
         """
         raise NotImplementedError

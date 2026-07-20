@@ -82,7 +82,8 @@ Storage → Retrieval → Ranking → Context → LLM.
       искусственно не ищем; loader/generic register не трогаем)
 - [x] LLM Streaming MVP (`LLMProvider.stream` + `ConversationEngine.stream_turn`;
       инвариант: joined stream == generate text; без tool-calls / SSE / cancel)
-- [ ] Streaming Tool Calls
+- [x] Streaming + Tool Calling (`stream_turn` = тот же ReAct, что `run_turn`;
+      наружу только текст; без tool events / SSE / cancel)
 - [ ] Streaming FastAPI endpoint (SSE/WebSocket)
 - [ ] Stream cancellation
 - [ ] Observability
@@ -106,6 +107,6 @@ Storage → Retrieval → Ranking → Context → LLM.
 
 ## Next
 
-**Streaming Tool Calls** или **Streaming FastAPI endpoint** — следующие итерации
-поверх уже доказанного транспорта. MVP: `stream` / `stream_turn` меняют только
-доставку; `run_turn` / tool loop / memory / context не затронуты.
+**Streaming FastAPI endpoint** (SSE/WebSocket) — транспорт к клиенту поверх
+уже доказанных `stream` / `stream_turn` (+ ReAct). Cancellation и observability —
+следующими отдельными PR.

@@ -1,6 +1,9 @@
 """Streaming — только транспорт. Семантика ответа = generate().
 
-Инвариант: ''.join(stream_tokens) == text из generate().message
+Инвариант: Streaming — альтернативный транспорт результата, а не
+альтернативный режим выполнения агента.
+
+''.join(stream_tokens) == text из generate().message
 """
 
 from __future__ import annotations
