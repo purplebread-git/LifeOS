@@ -38,7 +38,6 @@ class DeleteSourceTool(Tool):
         deleted = await context.knowledge.delete_source(source)
 
         return ToolResult(
-            tool_call_id="delete_source",
             content=[
                 TextBlock(
                     text=f"Deleted {deleted} chunk(s) from '{source}'",

@@ -48,7 +48,6 @@ class IngestDocumentTool(Tool):
         chunks = await context.ingestion.ingest(content.encode("utf-8"), source=source)
 
         return ToolResult(
-            tool_call_id="ingest_document",
             content=[
                 TextBlock(
                     text=f"Ingested {len(chunks)} chunk(s) from '{source}'",

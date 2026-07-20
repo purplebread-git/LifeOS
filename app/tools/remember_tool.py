@@ -45,7 +45,6 @@ class RememberTool(Tool):
         )
 
         return ToolResult(
-            tool_call_id="remember",
             content=[
                 TextBlock(
                     text="Memory stored",

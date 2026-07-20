@@ -41,7 +41,6 @@ class SearchKnowledgeTool(Tool):
         result = "No knowledge found" if not chunks else _format_chunks(chunks)
 
         return ToolResult(
-            tool_call_id="search_knowledge",
             content=[
                 TextBlock(
                     text=result,

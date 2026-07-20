@@ -33,7 +33,6 @@ class ListSourcesTool(Tool):
         result = "No sources" if not sources else "\n".join(f"- {source}" for source in sources)
 
         return ToolResult(
-            tool_call_id="list_sources",
             content=[
                 TextBlock(
                     text=result,

@@ -34,10 +34,13 @@ class SimpleToolManager(ToolManager):
             )
 
         try:
-            return await tool.execute(
+            result = await tool.execute(
                 tool_call.arguments,
                 context,
             )
+            # Корреляция — ответственность менеджера: инструмент не знает id вызова.
+            result.tool_call_id = tool_call.id
+            return result
 
         except ToolExecutionError as exc:
             return ToolResult(
